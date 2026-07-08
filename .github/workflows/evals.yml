@@ -1,0 +1,77 @@
+name: evals
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: # manual trigger for judge evals (spends LLM quota)
+
+jobs:
+  offline-evals:
+    name: harness + retrieval (deterministic, no LLM)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-multilingual-e5-small-v1
+
+      - name: Install (CPU torch)
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[dev]"
+
+      - name: Build index from versioned chunks
+        run: python -m nom_rag.cli build-index
+
+      - name: Retrieval + harness evals
+        run: pytest evals -m "not llm" -q
+
+  judge-evals:
+    name: generation + judge (manual, needs GEMINI_API_KEY secret)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-multilingual-e5-small-v1
+
+      - name: Install (CPU torch)
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[dev]"
+
+      - name: Build index from versioned chunks
+        run: python -m nom_rag.cli build-index
+
+      - name: Generation evals (LLM-as-judge)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: pytest evals -m llm -q
+
+      - name: Snapshot run
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python scripts/run_evals.py --tag "ci-${{ github.run_number }}" --generation
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-run
+          path: evals/runs/ci-*.json
