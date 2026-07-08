@@ -58,6 +58,15 @@ def _decode(raw: bytes) -> str:
         return raw.decode("cp1252", errors="replace")
 
 
+def _fold(text: str) -> str:
+    """Lowercase and strip accents, for robust title matching."""
+    return "".join(
+        ch
+        for ch in unicodedata.normalize("NFD", text.lower())
+        if not unicodedata.combining(ch)
+    )
+
+
 def _normalize(text: str) -> str:
     # collapse ALL whitespace: Word/DOF exports hard-wrap lines inside blocks
     text = unicodedata.normalize("NFC", text).replace("\xa0", " ")
@@ -191,7 +200,11 @@ def _merge_small(units: list[_Unit]) -> list[_Unit]:
             else:
                 merged.append(pending_intro)
             pending_intro = None
-        if len(unit.text) >= MIN_CHARS:
+        # definitions are self-contained lookup targets: merging several into
+        # one chunk dilutes the embedding and sinks definition queries
+        # (measured: evals/runs/ baseline vs split-definitions)
+        keep_standalone = "definicion" in _fold(unit.section_title)
+        if len(unit.text) >= MIN_CHARS or (keep_standalone and unit.numeral != unit.section):
             merged.append(unit)
             continue
         if unit.numeral == unit.section:  # tiny section intro -> merge forward

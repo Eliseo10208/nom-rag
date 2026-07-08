@@ -13,6 +13,15 @@ from nom_rag.index.embed import Embedder
 
 COLLECTION = "noms"
 
+# Bibliography chunks are citation lists, not norm content; they attract
+# keyword-heavy queries (e.g. "violencia") and displace real clauses.
+# Measured impact of excluding them: evals/runs/ baseline-with-bib vs baseline.
+EXCLUDED_SECTION_PREFIXES = ("bibliograf",)
+
+
+def _indexable(chunk: Chunk) -> bool:
+    return not chunk.section_title.lower().startswith(EXCLUDED_SECTION_PREFIXES)
+
 
 @dataclass
 class RetrievedChunk:
@@ -38,6 +47,7 @@ def build_index(
     except Exception:
         pass
     collection = client.create_collection(COLLECTION, metadata={"hnsw:space": "cosine"})
+    chunks = [c for c in chunks if _indexable(c)]
     embeddings = embedder.embed_passages([c.text for c in chunks])
     collection.add(
         ids=[c.chunk_id for c in chunks],
