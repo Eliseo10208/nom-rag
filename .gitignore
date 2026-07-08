@@ -1,0 +1,18 @@
+# secrets
+.env
+
+# raw downloads (reproducible via `nom-rag download-corpus`); chunks.jsonl IS versioned
+data/raw/
+
+# local artifacts
+.chroma/
+traces/
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.venv/
