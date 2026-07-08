@@ -18,9 +18,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT / "evals"))
+sys.path.insert(0, str(PROJECT_ROOT))
 
-from conftest import RETRIEVABLE_CASES, ALL_CASES  # noqa: E402
+from evals.conftest import ALL_CASES, RETRIEVABLE_CASES  # noqa: E402
 
 from nom_rag.config import settings  # noqa: E402
 from nom_rag.refs import covered_refs  # noqa: E402
@@ -60,53 +60,9 @@ def eval_retrieval(retriever, k: int) -> dict:
 
 
 def eval_generation(retriever, k: int) -> dict:
-    from judges.judge import make_judge  # noqa: E402  (evals/ is on sys.path)
-    from nom_rag.llm.base import get_client
-    from nom_rag.pipeline import ask
-    from nom_rag.evalchecks import check_abstention, check_citations
+    from evals.scoring import score_generation
 
-    client = get_client(settings.provider, settings.generation_model)
-    judge = make_judge()
-    per_case = {}
-    for i, case in enumerate(ALL_CASES, 1):
-        print(f"  [{i}/{len(ALL_CASES)}] {case.id}", file=sys.stderr)
-        result = ask(case.question, retriever, client, k=k)
-        row: dict = {
-            "trace_id": result.trace_id,
-            "citations": result.citations,
-            "tokens": result.usage,
-        }
-        if case.retrievable:
-            citation_check = check_citations(result.answer, result.retrieved)
-            verdict = judge.evaluate(case, result)
-            row |= {
-                "citation_accuracy": citation_check.accuracy,
-                "invalid_citations": citation_check.invalid,
-                "grounded": verdict.grounded,
-                "unsupported_claims": verdict.unsupported_claims,
-                "correctness": verdict.correctness,
-            }
-        else:
-            row["abstained"] = check_abstention(result.answer)
-        per_case[case.id] = row
-
-    scored = [r for r in per_case.values() if "correctness" in r]
-    abstain = [r for r in per_case.values() if "abstained" in r]
-    with_citations = [r for r in scored if r["citation_accuracy"] is not None]
-    return {
-        "n_scored": len(scored),
-        "groundedness": round(sum(r["grounded"] for r in scored) / len(scored), 3),
-        "correctness_avg": round(sum(r["correctness"] for r in scored) / len(scored), 3),
-        "citation_accuracy": round(
-            sum(r["citation_accuracy"] for r in with_citations) / len(with_citations), 3
-        )
-        if with_citations
-        else None,
-        "abstention_rate": round(sum(r["abstained"] for r in abstain) / len(abstain), 3)
-        if abstain
-        else None,
-        "per_case": per_case,
-    }
+    return score_generation(retriever, ALL_CASES, k=k)
 
 
 def main() -> None:
