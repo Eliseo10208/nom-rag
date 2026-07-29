@@ -17,7 +17,7 @@ $ nom-rag ask "¿Cada cuánto se evalúa el entorno organizacional?"
  score │ chunk           │ sección
  0.905 │ NOM-035:7.7 *   │ Identificación y análisis de los factores…
  ...
- modelo=gemini-2.5-flash  tokens=3214/87  latencia=1840ms  trace=93eb1ffe8b
+ modelo=gemini-3.6-flash  tokens=3214/87  latencia=1840ms  trace=93eb1ffe8b
 ```
 
 ## Corpus
@@ -50,9 +50,10 @@ question ──► e5-small embedding ──► ChromaDB (cosine, k=5) ──►
 
 - **Embeddings**: `intfloat/multilingual-e5-small`, local and free — retrieval evals run
   offline, in CI, on every push.
-- **LLM behind an interface** (`llm/base.py`): Gemini free tier by default; a Claude
-  implementation ships ready (`NOMRAG_PROVIDER=anthropic`); a deterministic fake backs
-  harness tests. The pipeline and the judge only see the interface.
+- **LLM behind an interface** (`llm/base.py`): Gemini free tier by default
+  (`gemini-3.6-flash`); a Claude implementation ships ready
+  (`NOMRAG_PROVIDER=anthropic`); a deterministic fake backs harness tests. The pipeline
+  and the judge only see the interface — swapping providers is a config change.
 - **Citation contract in the prompt**: every claim must cite `[NOM-035 §7.9]`; questions
   outside the corpus must use a literal abstention phrase. Both are machine-checkable.
 
@@ -60,7 +61,7 @@ question ──► e5-small embedding ──► ChromaDB (cosine, k=5) ──►
 
 ### Golden dataset
 
-32 hand-curated cases (`evals/dataset/golden.jsonl`), written against the actual chunk
+34 hand-curated cases (`evals/dataset/golden.jsonl`), written against the actual chunk
 text, across five categories: factual (16), definition (4), multi-hop cross-document (4),
 false-premise (5), out-of-scope (5). Expected references use **official clause numbers,
 not chunk ids** — a resolver maps them onto whatever the current chunker produced, so
@@ -155,6 +156,12 @@ the harness is exactly how you'd justify that upgrade with numbers.
 ## Honest limitations
 
 - e5-**small** trades recall for CI speed; the two xfail cases document the cost.
+- **The judge runs the same model as the generator** (`gemini-3.6-flash`), because it is
+  the only tier with free-tier quota — pro and 2.0-flash return 429, 3.5-flash returns
+  503. Same-model judging is subject to self-preference bias. This is exactly why the
+  system's core contract (citation validity, abstention) is checked **deterministically
+  and never by the judge**; the judge only scores groundedness and correctness. On a paid
+  key, `NOMRAG_JUDGE_MODEL=gemini-pro-latest` restores an independent, stronger judge.
 - The judge is calibrated by rubric design and structured output, not yet meta-evaluated
   against human labels (natural next step: label ~20 answers, measure judge agreement).
 - Corpus is 4 NOMs; the STPS catalog has 40+. The chunker's invariants are designed to

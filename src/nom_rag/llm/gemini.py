@@ -60,9 +60,21 @@ class GeminiClient:
                 time.sleep(wait)
                 delay = min(delay * 2, 60)
 
+        text = resp.text or ""
+        if not text:
+            # Gemini 3.x models think by default and thinking tokens count
+            # against max_output_tokens; when the budget runs out the response
+            # carries no text. Fail loudly here instead of letting an empty
+            # string surface as a mysterious schema-validation error upstream.
+            finish = getattr(resp.candidates[0], "finish_reason", None) if resp.candidates else None
+            raise RuntimeError(
+                f"{self.model} returned no text (finish_reason={finish}). "
+                "Raise max_tokens or lower the thinking budget."
+            )
+
         usage = resp.usage_metadata
         return LLMResponse(
-            text=resp.text or "",
+            text=text,
             model=self.model,
             input_tokens=(usage.prompt_token_count or 0) if usage else 0,
             output_tokens=(usage.candidates_token_count or 0) if usage else 0,

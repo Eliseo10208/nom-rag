@@ -15,8 +15,13 @@ class Settings(BaseSettings):
     )
 
     provider: str = "gemini"  # gemini | anthropic | fake
-    generation_model: str = "gemini-2.5-flash"
-    judge_model: str = "gemini-2.5-flash"
+    # Both roles run on the same model because it is the only tier with free-tier
+    # quota (pro and 2.0-flash return 429; 3.5-flash returns 503). Same-model
+    # judging carries self-preference bias — mitigated by keeping the system's
+    # core contract (citations, abstention) on deterministic checks, never the
+    # judge. With a paid key, point judge_model at a stronger model.
+    generation_model: str = "gemini-3.6-flash"
+    judge_model: str = "gemini-3.6-flash"
     embedding_model: str = "intfloat/multilingual-e5-small"
     top_k: int = 5
 
