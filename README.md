@@ -83,7 +83,9 @@ Judge verdicts are Pydantic-validated structured output with the reasoning field
 before the label; a malformed verdict is an error, never a silently wrong metric. The
 harness itself has 12 unit tests running on fakes.
 
-### Measured baseline (e5-small, k=5, 29 retrievable cases)
+### Measured baseline
+
+Retrieval (e5-small, k=5, 29 retrievable cases) — free, deterministic, gates every push:
 
 | metric | value | pytest gate |
 |---|---|---|
@@ -91,8 +93,17 @@ harness itself has 12 unit tests running on fakes.
 | recall@5 | **0.842** | ≥ 0.80 |
 | MRR | **0.722** | ≥ 0.68 |
 
-Generation gates (groundedness ≥ 0.80, correctness ≥ 3.5/5, citation accuracy ≥ 0.90,
-abstention ≥ 0.80) run against the live provider: `pytest evals -m llm`.
+Generation, run `baseline-gen` (34/34 cases, generation `gemini-3.1-flash-lite`, judge
+`gemini-3.5-flash-lite`):
+
+| metric | value | pytest gate | what it means |
+|---|---|---|---|
+| groundedness | **1.00** | ≥ 0.90 | judge found no claim unsupported by the retrieved context |
+| correctness | **4.62 / 5** | ≥ 4.0 | vs. expert reference answers |
+| citation accuracy | **1.00** | ≥ 0.90 | every cited clause exists in the context (deterministic) |
+| abstention | **0.80** | ≥ 0.75 | 4 of 5 out-of-corpus questions correctly declined |
+
+The one abstention failure is analyzed below — it is a real defect, not rounding.
 
 ### A change is only real if the evals say so
 
@@ -105,20 +116,59 @@ python scripts/run_evals.py --tag after
 python scripts/compare_runs.py before after     # markdown delta + per-case regressions
 ```
 
-Two real examples from this repo's history (snapshots in `evals/runs/`):
+Four real examples from this repo's history — two changes the evals accepted, two they
+rejected (snapshots in `evals/runs/`):
 
-1. **Splitting definition clauses into standalone chunks** — the eval `d02` (a definition
-   lookup) retrieved nothing relevant; diagnosis showed four definitions merged into one
-   chunk diluting the embedding. Fix: definitions exempted from small-chunk merging.
-   Result: `hit_rate 0.897 → 0.931, recall 0.807 → 0.842, zero per-case regressions`.
-2. **Excluding bibliography from the index** — hypothesis: bibliography chunks pollute
-   retrieval (one ranked #1 for a "violencia laboral" query). Measured effect on the
-   golden set: **none** — kept anyway as index hygiene, and documented honestly instead
-   of claiming a win.
+**1. Splitting definition clauses into standalone chunks — accepted.** The eval `d02` (a
+definition lookup) retrieved nothing relevant; diagnosis showed four definitions merged
+into one chunk, diluting the embedding. Definitions were exempted from small-chunk
+merging. Result: `hit_rate 0.897 → 0.931, recall 0.807 → 0.842`, zero per-case
+regressions.
 
-Two known-weak cases (`f07`, `p04`: commission role/tenure questions whose clauses rank
-just outside k=5) are tracked as `xfail`, not hidden. Candidate levers: e5-base, a
+**2. The eval found a bug in the eval — accepted.** `citation_accuracy` measured 0.807 and
+looked like the system's weak spot. It wasn't. Models cite an inciso —
+`[NOM-035 §7.5 a)]` — and the checker parsed that as a clause named `7.5a`, found no such
+clause, and marked a *correct* citation invalid. Verified against traces that
+`NOM-035:7.5`, `NOM-019:9.13` and `NOM-017:5.9` were all genuinely in the retrieved
+context. After normalizing incisos to their parent clause: **0.807 → 1.00**, re-measured
+on the *same 34 answers* via `rescore_from_traces.py` at **zero LLM cost**. Had the number
+been trusted without auditing, the next hours would have gone into "fixing" a
+non-existent problem.
+
+**3. A stronger abstention instruction — rejected.** `o02-alturas` (a question about work
+at heights, regulated by a NOM outside the corpus) gets answered instead of declined. The
+prompt was hardened to say that a mere mention is not regulation. Measured on the 5
+out-of-scope cases: **4/5 before, 4/5 after**. Reverted.
+
+**4. A retrieval relevance floor — rejected.** Top-1 similarity does separate the two
+populations on this dataset (in-corpus min **0.859**, out-of-scope max **0.854**), so a
+floor was added as a soft hint to the model. Measured: **4/5 again**, and the margin is
+only 0.005 across 34 cases — fitting a threshold to that would be fitting noise.
+Reverted; the code carries no unmeasured complexity.
+
+Two accepted, two reverted. That ratio is the point: without the harness, changes 3 and 4
+both *sound* right and would have shipped.
+
+Two known-weak retrieval cases (`f07`, `p04`: commission role/tenure questions whose
+clauses rank just outside k=5) are tracked as `xfail`, not hidden. `f07` is also the
+lowest-scoring generation case (correctness 1/5) — a retrieval miss propagating into a
+wrong answer, correctly attributed to its actual cause. Candidate levers: e5-base, a
 reranker, or k=6 — each is one `compare_runs.py` away from being justified with numbers.
+
+### The most interesting failure: grounded but not responsive
+
+`o02-alturas` asks what the norms require for work at heights — regulated by NOM-009,
+which is *not* in the corpus. The system answers anyway, citing `4.2.1.6.1` (anchor
+point), `4.2.1.6.2` (scaffolding), and so on. Those numbers are **real**: they come from
+NOM-019's Reference Guide I, a taxonomy of hazardous conditions used for accident
+investigation, which happens to contain a "Trabajos en Altura" heading.
+
+So the answer is perfectly grounded — a groundedness judge scores it 1.0 — and still
+wrong, because a classification annex is not a set of requirements. This is precisely why
+abstention is measured **separately and deterministically** rather than folded into a
+single quality score: no amount of groundedness catches an answer that is faithful to
+retrieved text that should never have been used. Two attempted fixes (README §3 and §4
+above) failed to move it; it stands as a documented open defect.
 
 ### Traces
 
@@ -129,6 +179,18 @@ case, so any metric traces back to the exact retrieval that produced it.
 ```
 $ nom-rag trace 93eb1ffe8b
 ```
+
+Because traces hold the answer *and* the retrieved context, the deterministic metrics of a
+past run can be recomputed after fixing a checker — no model calls, no quota:
+
+```
+$ python scripts/rescore_from_traces.py baseline-gen
+| métrica           | almacenado | recalculado |
+| citation_accuracy | 0.807      | 1.0         |
+```
+
+That is how story #2 above was measured: the *checker* changed, so previous runs were
+re-measured with the new checker instead of comparing a new number against an old one.
 
 ## Quickstart
 
