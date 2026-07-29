@@ -100,10 +100,15 @@ Generation, run `baseline-gen` (34/34 cases, generation `gemini-3.1-flash-lite`,
 |---|---|---|---|
 | groundedness | **1.00** | ≥ 0.90 | judge found no claim unsupported by the retrieved context |
 | correctness | **4.62 / 5** | ≥ 4.0 | vs. expert reference answers |
-| citation accuracy | **1.00** | ≥ 0.90 | every cited clause exists in the context (deterministic) |
+| citation accuracy | **1.00** ¹ | ≥ 0.90 | every cited clause exists in the context (deterministic) |
 | abstention | **0.80** | ≥ 0.75 | 4 of 5 out-of-corpus questions correctly declined |
 
 The one abstention failure is analyzed below — it is a real defect, not rounding.
+
+¹ `evals/runs/baseline-gen.json` stores `0.807`, the value measured by the checker *at the
+time of the run*; `baseline-gen-rescored.json` holds the `1.00` produced by re-running the
+corrected checker over the same answers (story #2 below). Both files are kept — a run
+snapshot records what was actually measured, and is never edited after the fact.
 
 ### A change is only real if the evals say so
 
