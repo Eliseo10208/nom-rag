@@ -36,7 +36,26 @@ el numeral que la desmiente.
 4. Responde en español, directo y conciso (máximo ~150 palabras), sin preámbulos.
 """
 
-CITATION_RE = re.compile(r"\[(NOM-\d{3})\s*§\s*([0-9A-Za-z.\-]+)(?:#\d+)?\]")
+# Capture the whole reference body and normalize it, rather than assuming a
+# shape: models legitimately cite an inciso ("[NOM-035 §7.5 a)]", "§8.5.a"),
+# and a checker that reads that as a clause named "7.5a" marks a CORRECT
+# citation invalid. Incisos live inside their parent clause, which is the
+# granularity the corpus is chunked and cited at, so they normalize to it.
+CITATION_RE = re.compile(r"\[(NOM-\d{3})\s*§?\s*([^\]]{1,40})\]")
+
+_SYMBOLIC_RE = re.compile(r"^(TRANS|GR-[IVXLC]+|AP-[A-Z0-9]+)", re.IGNORECASE)
+_NUMERIC_RE = re.compile(r"^(\d{1,2}(?:\.\d{1,3})*)")
+
+
+def normalize_numeral(raw: str) -> str | None:
+    """'7.5 a)' -> '7.5', '8.5.a' -> '8.5', '9.9b' -> '9.9', 'GR-I' -> 'GR-I'.
+    Returns None when the text is not a clause reference at all."""
+    ref = raw.strip().rstrip(".,;:").split("#")[0].strip()
+    if match := _SYMBOLIC_RE.match(ref):
+        return match.group(1).upper()
+    if match := _NUMERIC_RE.match(ref):
+        return match.group(1)
+    return None
 
 
 @dataclass
@@ -51,9 +70,15 @@ class AskResult:
 
 
 def extract_citations(answer: str) -> list[str]:
+    """Clause references cited in an answer, in order, deduplicated. Several
+    incisos of one clause collapse to a single citation — they are one claim
+    about one clause, not five."""
     seen: list[str] = []
-    for nom, numeral in CITATION_RE.findall(answer):
-        ref = f"{nom}:{numeral.rstrip('.')}"
+    for nom, raw in CITATION_RE.findall(answer):
+        numeral = normalize_numeral(raw)
+        if numeral is None:
+            continue
+        ref = f"{nom}:{numeral}"
         if ref not in seen:
             seen.append(ref)
     return seen

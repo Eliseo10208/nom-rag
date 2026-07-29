@@ -1,0 +1,951 @@
+{
+  "tag": "baseline-gen",
+  "ts": "2026-07-29T19:26:17+00:00",
+  "config": {
+    "provider": "gemini",
+    "generation_model": "gemini-3.1-flash-lite",
+    "judge_model": "gemini-3.5-flash-lite",
+    "embedding_model": "intfloat/multilingual-e5-small",
+    "k": 5,
+    "n_chunks": 248
+  },
+  "retrieval": {
+    "k": 5,
+    "n_cases": 29,
+    "hit_rate": 0.931,
+    "recall": 0.842,
+    "mrr": 0.722,
+    "per_case": {
+      "f01-periodicidad-evaluacion": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.333,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:7.1",
+          "NOM-035:7.6",
+          "NOM-035:7.7",
+          "NOM-035:7.4",
+          "NOM-035:7.3"
+        ]
+      },
+      "f02-politica-prevencion": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:5.1",
+          "NOM-035:4.9",
+          "NOM-035:5.4",
+          "NOM-035:6.1",
+          "NOM-035:5.7"
+        ]
+      },
+      "f03-traumatico-canalizar": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:5.5",
+          "NOM-035:6.5",
+          "NOM-030:4.1",
+          "NOM-030:4.2",
+          "NOM-017:5.10"
+        ]
+      },
+      "f04-cuestionarios-propios": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.333,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:GR-III#3",
+          "NOM-035:GR-II#2",
+          "NOM-035:7.5",
+          "NOM-017:5.4",
+          "NOM-035:GR-III#4"
+        ]
+      },
+      "f05-tres-niveles": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:8.5",
+          "NOM-035:10.2#5",
+          "NOM-035:8.4",
+          "NOM-035:8.3",
+          "NOM-035:7.1"
+        ]
+      },
+      "f06-integracion-comision": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.2,
+        "missing": [],
+        "retrieved": [
+          "NOM-019:7.5",
+          "NOM-019:7.6",
+          "NOM-019:1",
+          "NOM-019:7.2",
+          "NOM-019:7.1"
+        ]
+      },
+      "f07-vigencia-nombramientos": {
+        "hit": false,
+        "recall": 0.0,
+        "rr": 0.0,
+        "missing": [
+          "NOM-019:9.1"
+        ],
+        "retrieved": [
+          "NOM-019:8.2",
+          "NOM-019:7.5",
+          "NOM-019:8.3",
+          "NOM-019:7.6",
+          "NOM-019:TRANS"
+        ]
+      },
+      "f08-programa-recorridos": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-019:9.3",
+          "NOM-019:9.5",
+          "NOM-019:8.3",
+          "NOM-019:9.4",
+          "NOM-019:5.4"
+        ]
+      },
+      "f09-verificaciones-extraordinarias": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-019:9.9",
+          "NOM-019:12.3#2",
+          "NOM-019:8.3",
+          "NOM-019:9.5",
+          "NOM-019:4.13"
+        ]
+      },
+      "f10-sustitucion-integrantes": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-019:9.13",
+          "NOM-019:7.5",
+          "NOM-019:7.6",
+          "NOM-019:7.2",
+          "NOM-019:1"
+        ]
+      },
+      "f11-epp-visitantes": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-017:5.5",
+          "NOM-017:4.2",
+          "NOM-017:AP-I#4",
+          "NOM-017:5.3",
+          "NOM-017:5.10"
+        ]
+      },
+      "f12-capacitacion-epp": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-017:5.9",
+          "NOM-017:5.8",
+          "NOM-017:AP-I#5",
+          "NOM-017:5.5",
+          "NOM-017:5.3"
+        ]
+      },
+      "f13-responsable-sst": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.333,
+        "missing": [],
+        "retrieved": [
+          "NOM-030:3.11",
+          "NOM-030:4.2",
+          "NOM-030:4.1",
+          "NOM-030:5.7",
+          "NOM-030:4.6"
+        ]
+      },
+      "f14-conservar-docs": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.333,
+        "missing": [],
+        "retrieved": [
+          "NOM-030:9.2#1",
+          "NOM-035:10.4",
+          "NOM-030:4.6",
+          "NOM-030:TRANS",
+          "NOM-035:10.2#6"
+        ]
+      },
+      "f15-vigor-035": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.333,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:3",
+          "NOM-035:2",
+          "NOM-035:TRANS",
+          "NOM-035:10.2#6",
+          "NOM-035:10.2#5"
+        ]
+      },
+      "f16-instrucciones-idioma": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-017:7.1#2",
+          "NOM-017:7.1#1",
+          "NOM-017:4.2",
+          "NOM-017:6.2",
+          "NOM-017:5.3"
+        ]
+      },
+      "d01-traumatico-severo": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:4.1",
+          "NOM-035:GR-I",
+          "NOM-035:5.5",
+          "NOM-035:10.2#5",
+          "NOM-035:10.2#4"
+        ]
+      },
+      "d02-violencia-laboral": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.25,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:5.6",
+          "NOM-035:GR-IV#2",
+          "NOM-035:8.1",
+          "NOM-035:4.12",
+          "NOM-035:10.2#4"
+        ]
+      },
+      "d03-riesgo-grave": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-030:3.13",
+          "NOM-030:GR-I",
+          "NOM-030:3.12",
+          "NOM-030:GR-II#3",
+          "NOM-030:GR-II#1"
+        ]
+      },
+      "d04-servicios-preventivos": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-030:3.15",
+          "NOM-030:1",
+          "NOM-030:3.14",
+          "NOM-030:3.11",
+          "NOM-030:3.10"
+        ]
+      },
+      "m01-tamano-empresa-035": {
+        "hit": true,
+        "recall": 0.333,
+        "rr": 0.5,
+        "missing": [
+          "NOM-035:5.2",
+          "NOM-035:7.1"
+        ],
+        "retrieved": [
+          "NOM-035:2",
+          "NOM-035:5.3",
+          "NOM-035:5.8",
+          "NOM-035:GR-III#3",
+          "NOM-035:GR-III#2"
+        ]
+      },
+      "m02-035-integra-030": {
+        "hit": true,
+        "recall": 0.5,
+        "rr": 1.0,
+        "missing": [
+          "NOM-030:6.1"
+        ],
+        "retrieved": [
+          "NOM-035:7.6",
+          "NOM-035:10.2#3",
+          "NOM-035:7.1",
+          "NOM-035:7.2",
+          "NOM-035:7.7"
+        ]
+      },
+      "m03-comision-usa-diagnostico": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-019:9.6",
+          "NOM-030:6.1",
+          "NOM-019:5.4",
+          "NOM-030:4.5",
+          "NOM-019:9.7"
+        ]
+      },
+      "m04-periodicidades": {
+        "hit": true,
+        "recall": 0.25,
+        "rr": 1.0,
+        "missing": [
+          "NOM-017:5.9",
+          "NOM-030:4.4",
+          "NOM-035:7.9"
+        ],
+        "retrieved": [
+          "NOM-019:9.5",
+          "NOM-019:9.4",
+          "NOM-019:8.3",
+          "NOM-019:9.12",
+          "NOM-019:4.13"
+        ]
+      },
+      "p01-seis-meses": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.333,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:7.3",
+          "NOM-035:10.2#6",
+          "NOM-035:7.7",
+          "NOM-035:10.2#2",
+          "NOM-035:7.6"
+        ]
+      },
+      "p02-recorridos-mensuales": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-019:9.5",
+          "NOM-019:9.3",
+          "NOM-019:9.12",
+          "NOM-019:5.4",
+          "NOM-019:8.3"
+        ]
+      },
+      "p03-30-trabajadores": {
+        "hit": true,
+        "recall": 0.333,
+        "rr": 1.0,
+        "missing": [
+          "NOM-035:5.2",
+          "NOM-035:7.1"
+        ],
+        "retrieved": [
+          "NOM-035:5.3",
+          "NOM-035:7.3",
+          "NOM-035:10.2#6",
+          "NOM-035:10.2#2",
+          "NOM-035:10.2#3"
+        ]
+      },
+      "p04-preside-secretario": {
+        "hit": false,
+        "recall": 0.0,
+        "rr": 0.0,
+        "missing": [
+          "NOM-019:8.2",
+          "NOM-019:9.1"
+        ],
+        "retrieved": [
+          "NOM-019:9.7",
+          "NOM-019:TRANS",
+          "NOM-019:7.2",
+          "NOM-019:6.2",
+          "NOM-019:5.3"
+        ]
+      },
+      "p05-epp-cinco-anios": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-017:5.9",
+          "NOM-017:5.12",
+          "NOM-017:5.4",
+          "NOM-017:5.3",
+          "NOM-017:5.5"
+        ]
+      }
+    }
+  },
+  "generation": {
+    "n_scored": 29,
+    "n_abstention_cases": 5,
+    "groundedness": 1.0,
+    "correctness_avg": 4.621,
+    "citation_accuracy": 0.807,
+    "abstention_rate": 0.8,
+    "per_case": {
+      "f01-periodicidad-evaluacion": {
+        "trace_id": "bfe3f2073d",
+        "citations": [
+          "NOM-035:7.9"
+        ],
+        "tokens": {
+          "input_tokens": 1132,
+          "output_tokens": 39
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f02-politica-prevencion": {
+        "trace_id": "8cf7eec8ba",
+        "citations": [
+          "NOM-035:5.1",
+          "NOM-035:4.9"
+        ],
+        "tokens": {
+          "input_tokens": 905,
+          "output_tokens": 140
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f03-traumatico-canalizar": {
+        "trace_id": "686eae5de6",
+        "citations": [
+          "NOM-035:5.5",
+          "NOM-035:6.5"
+        ],
+        "tokens": {
+          "input_tokens": 817,
+          "output_tokens": 133
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f04-cuestionarios-propios": {
+        "trace_id": "b206939d13",
+        "citations": [
+          "NOM-035:7.5",
+          "NOM-035:7.5a",
+          "NOM-035:7.5b",
+          "NOM-035:7.5c",
+          "NOM-035:7.5d",
+          "NOM-035:7.5e"
+        ],
+        "tokens": {
+          "input_tokens": 5135,
+          "output_tokens": 300
+        },
+        "citation_accuracy": 0.16666666666666666,
+        "invalid_citations": [
+          "NOM-035:7.5a",
+          "NOM-035:7.5b",
+          "NOM-035:7.5c",
+          "NOM-035:7.5d",
+          "NOM-035:7.5e"
+        ],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f05-tres-niveles": {
+        "trace_id": "d71d3c56a4",
+        "citations": [
+          "NOM-035:8.5.a",
+          "NOM-035:8.5.b",
+          "NOM-035:8.5.c",
+          "NOM-035:8.5"
+        ],
+        "tokens": {
+          "input_tokens": 2036,
+          "output_tokens": 207
+        },
+        "citation_accuracy": 0.25,
+        "invalid_citations": [
+          "NOM-035:8.5.a",
+          "NOM-035:8.5.b",
+          "NOM-035:8.5.c"
+        ],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f06-integracion-comision": {
+        "trace_id": "8186b77f30",
+        "citations": [
+          "NOM-019:7.1.a",
+          "NOM-019:7.1.b",
+          "NOM-019:7.2",
+          "NOM-019:7.3"
+        ],
+        "tokens": {
+          "input_tokens": 740,
+          "output_tokens": 188
+        },
+        "citation_accuracy": 0.5,
+        "invalid_citations": [
+          "NOM-019:7.1.a",
+          "NOM-019:7.1.b"
+        ],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f07-vigencia-nombramientos": {
+        "trace_id": "1155396a43",
+        "citations": [
+          "NOM-019:8.2",
+          "NOM-019:8.3",
+          "NOM-019:TRANS"
+        ],
+        "tokens": {
+          "input_tokens": 1630,
+          "output_tokens": 133
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 1
+      },
+      "f08-programa-recorridos": {
+        "trace_id": "712cd8c9f1",
+        "citations": [
+          "NOM-019:9.3"
+        ],
+        "tokens": {
+          "input_tokens": 1224,
+          "output_tokens": 63
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f09-verificaciones-extraordinarias": {
+        "trace_id": "88b823e203",
+        "citations": [
+          "NOM-019:9.9a",
+          "NOM-019:9.9b",
+          "NOM-019:9.9c",
+          "NOM-019:9.9"
+        ],
+        "tokens": {
+          "input_tokens": 2187,
+          "output_tokens": 166
+        },
+        "citation_accuracy": 0.25,
+        "invalid_citations": [
+          "NOM-019:9.9a",
+          "NOM-019:9.9b",
+          "NOM-019:9.9c"
+        ],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f10-sustitucion-integrantes": {
+        "trace_id": "55bc6994a9",
+        "citations": [
+          "NOM-019:9.13.a",
+          "NOM-019:9.13.b",
+          "NOM-019:9.13.c"
+        ],
+        "tokens": {
+          "input_tokens": 715,
+          "output_tokens": 109
+        },
+        "citation_accuracy": 0.0,
+        "invalid_citations": [
+          "NOM-019:9.13.a",
+          "NOM-019:9.13.b",
+          "NOM-019:9.13.c"
+        ],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f11-epp-visitantes": {
+        "trace_id": "67c579f0c2",
+        "citations": [
+          "NOM-017:5.5"
+        ],
+        "tokens": {
+          "input_tokens": 2338,
+          "output_tokens": 84
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f12-capacitacion-epp": {
+        "trace_id": "1307e84396",
+        "citations": [
+          "NOM-017:5.9.b",
+          "NOM-017:5.9.c"
+        ],
+        "tokens": {
+          "input_tokens": 2446,
+          "output_tokens": 94
+        },
+        "citation_accuracy": 0.0,
+        "invalid_citations": [
+          "NOM-017:5.9.b",
+          "NOM-017:5.9.c"
+        ],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f13-responsable-sst": {
+        "trace_id": "daaf09de8d",
+        "citations": [
+          "NOM-030:4.1.1",
+          "NOM-030:3.11"
+        ],
+        "tokens": {
+          "input_tokens": 834,
+          "output_tokens": 76
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f14-conservar-docs": {
+        "trace_id": "1fc43723d3",
+        "citations": [
+          "NOM-030:4.8"
+        ],
+        "tokens": {
+          "input_tokens": 2106,
+          "output_tokens": 33
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f15-vigor-035": {
+        "trace_id": "eaf6dd1a9e",
+        "citations": [],
+        "tokens": {
+          "input_tokens": 2095,
+          "output_tokens": 107
+        },
+        "citation_accuracy": null,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "f16-instrucciones-idioma": {
+        "trace_id": "69b3ef5524",
+        "citations": [
+          "NOM-017:7.1",
+          "NOM-017:7.2"
+        ],
+        "tokens": {
+          "input_tokens": 2254,
+          "output_tokens": 70
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "d01-traumatico-severo": {
+        "trace_id": "517cd52677",
+        "citations": [
+          "NOM-035:4.1"
+        ],
+        "tokens": {
+          "input_tokens": 3134,
+          "output_tokens": 120
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "d02-violencia-laboral": {
+        "trace_id": "5e08e83304",
+        "citations": [
+          "NOM-035:4.12"
+        ],
+        "tokens": {
+          "input_tokens": 1986,
+          "output_tokens": 49
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "d03-riesgo-grave": {
+        "trace_id": "c20e075ccc",
+        "citations": [
+          "NOM-030:3.13"
+        ],
+        "tokens": {
+          "input_tokens": 2649,
+          "output_tokens": 47
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 2
+      },
+      "d04-servicios-preventivos": {
+        "trace_id": "322052b6cb",
+        "citations": [
+          "NOM-030:3.15",
+          "NOM-030:1"
+        ],
+        "tokens": {
+          "input_tokens": 640,
+          "output_tokens": 181
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "m01-tamano-empresa-035": {
+        "trace_id": "a880aa2c51",
+        "citations": [],
+        "tokens": {
+          "input_tokens": 3348,
+          "output_tokens": 205
+        },
+        "citation_accuracy": null,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "m02-035-integra-030": {
+        "trace_id": "5b597ad2b3",
+        "citations": [],
+        "tokens": {
+          "input_tokens": 2797,
+          "output_tokens": 69
+        },
+        "citation_accuracy": null,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "m03-comision-usa-diagnostico": {
+        "trace_id": "a09acd43a9",
+        "citations": [
+          "NOM-019:9.6",
+          "NOM-019:5.8",
+          "NOM-030:4.5"
+        ],
+        "tokens": {
+          "input_tokens": 1051,
+          "output_tokens": 128
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "m04-periodicidades": {
+        "trace_id": "0839417a53",
+        "citations": [
+          "NOM-019:9.5"
+        ],
+        "tokens": {
+          "input_tokens": 1358,
+          "output_tokens": 157
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 2
+      },
+      "p01-seis-meses": {
+        "trace_id": "5d09606e5c",
+        "citations": [
+          "NOM-035:7.9"
+        ],
+        "tokens": {
+          "input_tokens": 2064,
+          "output_tokens": 46
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "p02-recorridos-mensuales": {
+        "trace_id": "595107b782",
+        "citations": [
+          "NOM-019:9.5"
+        ],
+        "tokens": {
+          "input_tokens": 1480,
+          "output_tokens": 57
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "p03-30-trabajadores": {
+        "trace_id": "3aa240c79a",
+        "citations": [
+          "NOM-035:5.3",
+          "NOM-035:10.2"
+        ],
+        "tokens": {
+          "input_tokens": 2787,
+          "output_tokens": 99
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "p04-preside-secretario": {
+        "trace_id": "6b3219086b",
+        "citations": [
+          "NOM-019:5.3",
+          "NOM-019:6.3",
+          "NOM-019:7.3"
+        ],
+        "tokens": {
+          "input_tokens": 1052,
+          "output_tokens": 115
+        },
+        "citation_accuracy": 1.0,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 4
+      },
+      "p05-epp-cinco-anios": {
+        "trace_id": "8bc6b13ca9",
+        "citations": [],
+        "tokens": {
+          "input_tokens": 1963,
+          "output_tokens": 62
+        },
+        "citation_accuracy": null,
+        "invalid_citations": [],
+        "grounded": true,
+        "unsupported_claims": [],
+        "correctness": 5
+      },
+      "o01-extintores": {
+        "trace_id": "e9147ad372",
+        "citations": [],
+        "tokens": {
+          "input_tokens": 1320,
+          "output_tokens": 59
+        },
+        "abstained": true
+      },
+      "o02-alturas": {
+        "trace_id": "0724272099",
+        "citations": [],
+        "tokens": {
+          "input_tokens": 3820,
+          "output_tokens": 230
+        },
+        "abstained": false
+      },
+      "o03-ruido": {
+        "trace_id": "a5c92a40d2",
+        "citations": [],
+        "tokens": {
+          "input_tokens": 4841,
+          "output_tokens": 73
+        },
+        "abstained": true
+      },
+      "o04-aguinaldo": {
+        "trace_id": "514346b706",
+        "citations": [],
+        "tokens": {
+          "input_tokens": 3562,
+          "output_tokens": 73
+        },
+        "abstained": true
+      },
+      "o05-montacargas": {
+        "trace_id": "f8c62ffa32",
+        "citations": [],
+        "tokens": {
+          "input_tokens": 3917,
+          "output_tokens": 79
+        },
+        "abstained": true
+      }
+    },
+    "complete": true
+  }
+}

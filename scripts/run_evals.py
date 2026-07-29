@@ -59,10 +59,36 @@ def eval_retrieval(retriever, k: int) -> dict:
     }
 
 
-def eval_generation(retriever, k: int) -> dict:
-    from evals.scoring import score_generation
+def eval_generation(retriever, k: int, snapshot: dict, out_path: Path) -> dict:
+    """Score generation, checkpointing to disk after every case so a quota wall
+    (free tiers are small) costs at most one case of work, and a re-run with the
+    same --tag resumes instead of starting over."""
+    from evals.scoring import QuotaExhausted, aggregate, score_generation
 
-    return score_generation(retriever, ALL_CASES, k=k)
+    previous = (snapshot.get("generation") or {}).get("per_case") or {}
+
+    def checkpoint(case_id: str, row: dict, per_case: dict) -> None:
+        snapshot["generation"] = aggregate(per_case)
+        snapshot["generation"]["complete"] = False
+        out_path.write_text(
+            json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+
+    try:
+        result = score_generation(
+            retriever, ALL_CASES, k=k, resume_from=previous, on_case=checkpoint
+        )
+        result["complete"] = len(result["per_case"]) == len(ALL_CASES)
+        return result
+    except QuotaExhausted as exc:
+        partial = aggregate(exc.args[1])
+        partial["complete"] = False
+        print(
+            f"\n!! Cuota agotada tras {len(partial['per_case'])}/{len(ALL_CASES)} casos.\n"
+            f"   Progreso guardado. Reanuda con el MISMO --tag cuando haya cuota.",
+            file=sys.stderr,
+        )
+        return partial
 
 
 def main() -> None:
@@ -78,6 +104,11 @@ def main() -> None:
     from nom_rag.index.embed import Embedder
     from nom_rag.index.store import Retriever
 
+    RUNS_DIR.mkdir(parents=True, exist_ok=True)
+    out = RUNS_DIR / f"{args.tag}.json"
+    # a same-tag re-run resumes: keep whatever generation cases were already scored
+    previous = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {}
+
     retriever = Retriever(Embedder(settings.embedding_model))
     snapshot = {
         "tag": args.tag,
@@ -91,13 +122,11 @@ def main() -> None:
             "n_chunks": len(load_chunks()),
         },
         "retrieval": eval_retrieval(retriever, args.k),
-        "generation": None,
+        "generation": previous.get("generation"),
     }
     if args.generation:
-        snapshot["generation"] = eval_generation(retriever, args.k)
+        snapshot["generation"] = eval_generation(retriever, args.k, snapshot, out)
 
-    RUNS_DIR.mkdir(parents=True, exist_ok=True)
-    out = RUNS_DIR / f"{args.tag}.json"
     out.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
 
     r = snapshot["retrieval"]
@@ -105,10 +134,12 @@ def main() -> None:
           f"hit_rate={r['hit_rate']}  recall={r['recall']}  mrr={r['mrr']}")
     if snapshot["generation"]:
         g = snapshot["generation"]
+        coverage = f"{len(g['per_case'])}/{len(ALL_CASES)} casos"
+        status = "" if g.get("complete") else "  [PARCIAL — reanuda con el mismo --tag]"
         print(
-            f"[{args.tag}] generation: groundedness={g['groundedness']}  "
+            f"[{args.tag}] generation ({coverage}): groundedness={g['groundedness']}  "
             f"correctness={g['correctness_avg']}  citation_acc={g['citation_accuracy']}  "
-            f"abstention={g['abstention_rate']}"
+            f"abstention={g['abstention_rate']}{status}"
         )
     print(f"-> {out}")
 

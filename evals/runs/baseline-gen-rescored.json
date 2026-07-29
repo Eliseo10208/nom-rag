@@ -1,0 +1,282 @@
+{
+  "tag": "baseline-gen-rescored",
+  "source_run": "baseline-gen",
+  "citation_accuracy": 1.0,
+  "abstention_rate": 0.8,
+  "per_case": {
+    "f01-periodicidad-evaluacion": {
+      "citations": [
+        "NOM-035:7.9"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f02-politica-prevencion": {
+      "citations": [
+        "NOM-035:5.1",
+        "NOM-035:4.9"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f03-traumatico-canalizar": {
+      "citations": [
+        "NOM-035:5.5",
+        "NOM-035:6.5"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f04-cuestionarios-propios": {
+      "citations": [
+        "NOM-035:7.5"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f05-tres-niveles": {
+      "citations": [
+        "NOM-035:8.5"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f06-integracion-comision": {
+      "citations": [
+        "NOM-019:7.1",
+        "NOM-019:7.2",
+        "NOM-019:7.3"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f07-vigencia-nombramientos": {
+      "citations": [
+        "NOM-019:8.2",
+        "NOM-019:8.3",
+        "NOM-019:7.5",
+        "NOM-019:TRANS"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f08-programa-recorridos": {
+      "citations": [
+        "NOM-019:9.3"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f09-verificaciones-extraordinarias": {
+      "citations": [
+        "NOM-019:9.9"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f10-sustitucion-integrantes": {
+      "citations": [
+        "NOM-019:9.13"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f11-epp-visitantes": {
+      "citations": [
+        "NOM-017:5.5"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f12-capacitacion-epp": {
+      "citations": [
+        "NOM-017:5.9"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f13-responsable-sst": {
+      "citations": [
+        "NOM-030:4.1.1",
+        "NOM-030:3.11"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f14-conservar-docs": {
+      "citations": [
+        "NOM-030:4.8"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f15-vigor-035": {
+      "citations": [
+        "NOM-035:TRANS"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "f16-instrucciones-idioma": {
+      "citations": [
+        "NOM-017:7.1",
+        "NOM-017:7.2"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "d01-traumatico-severo": {
+      "citations": [
+        "NOM-035:4.1"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "d02-violencia-laboral": {
+      "citations": [
+        "NOM-035:4.12"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "d03-riesgo-grave": {
+      "citations": [
+        "NOM-030:3.13"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "d04-servicios-preventivos": {
+      "citations": [
+        "NOM-030:3.15",
+        "NOM-030:1"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "m01-tamano-empresa-035": {
+      "citations": [
+        "NOM-035:2",
+        "NOM-035:5.8"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "m02-035-integra-030": {
+      "citations": [
+        "NOM-035:7.6"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "m03-comision-usa-diagnostico": {
+      "citations": [
+        "NOM-019:9.6",
+        "NOM-019:5.8",
+        "NOM-030:4.5"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "m04-periodicidades": {
+      "citations": [
+        "NOM-019:9.5",
+        "NOM-019:8.3"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "p01-seis-meses": {
+      "citations": [
+        "NOM-035:7.9"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "p02-recorridos-mensuales": {
+      "citations": [
+        "NOM-019:9.5"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "p03-30-trabajadores": {
+      "citations": [
+        "NOM-035:5.3",
+        "NOM-035:10.2"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "p04-preside-secretario": {
+      "citations": [
+        "NOM-019:5.3",
+        "NOM-019:6.3",
+        "NOM-019:7.3"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "p05-epp-cinco-anios": {
+      "citations": [
+        "NOM-017:5.9"
+      ],
+      "citation_accuracy": 1.0,
+      "abstained": null,
+      "invalid_citations": []
+    },
+    "o01-extintores": {
+      "citations": null,
+      "citation_accuracy": null,
+      "abstained": true
+    },
+    "o02-alturas": {
+      "citations": null,
+      "citation_accuracy": null,
+      "abstained": false
+    },
+    "o03-ruido": {
+      "citations": null,
+      "citation_accuracy": null,
+      "abstained": true
+    },
+    "o04-aguinaldo": {
+      "citations": null,
+      "citation_accuracy": null,
+      "abstained": true
+    },
+    "o05-montacargas": {
+      "citations": null,
+      "citation_accuracy": null,
+      "abstained": true
+    }
+  }
+}

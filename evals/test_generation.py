@@ -27,10 +27,18 @@ pytestmark = [
     ),
 ]
 
-GROUNDEDNESS_THRESHOLD = 0.80
-CORRECTNESS_THRESHOLD = 3.5
+# Measured on run `baseline-gen` (34/34 cases, gemini-3.1-flash-lite generation /
+# gemini-3.5-flash-lite judge): groundedness 1.0, correctness 4.62/5,
+# citation_accuracy 1.0, abstention 0.80. Gates sit below the measured values by
+# roughly one case, so a single regression trips them without flaking on judge
+# nondeterminism.
+GROUNDEDNESS_THRESHOLD = 0.90
+CORRECTNESS_THRESHOLD = 4.0
 CITATION_ACCURACY_THRESHOLD = 0.90
-ABSTENTION_THRESHOLD = 0.80
+# 4 of 5 out-of-scope questions abstain today; `o02-alturas` answers using a
+# hazard-taxonomy annex that merely mentions "Trabajos en Altura". Gating here
+# means a second out-of-scope leak fails CI.
+ABSTENTION_THRESHOLD = 0.75
 
 
 @pytest.fixture(scope="module")

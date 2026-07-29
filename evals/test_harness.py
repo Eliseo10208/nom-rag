@@ -129,6 +129,95 @@ def test_groundedness_schema_orders_reasoning_first():
     assert fields.index("reasoning") < fields.index("grounded")
 
 
+# ------------------------------------------------- checkpoint / resume logic
+
+
+def test_aggregate_computes_means_and_ignores_missing():
+    from .scoring import aggregate
+
+    per_case = {
+        "a": {"grounded": True, "correctness": 5, "citation_accuracy": 1.0},
+        "b": {"grounded": False, "correctness": 3, "citation_accuracy": 0.5},
+        "c": {"grounded": True, "correctness": 4, "citation_accuracy": None},  # no citations
+        "o1": {"abstained": True},
+        "o2": {"abstained": False},
+    }
+    agg = aggregate(per_case)
+    assert agg["n_scored"] == 3
+    assert agg["groundedness"] == round(2 / 3, 3)
+    assert agg["correctness_avg"] == 4.0
+    assert agg["citation_accuracy"] == 0.75  # None excluded, not counted as 0
+    assert agg["abstention_rate"] == 0.5
+
+
+def test_aggregate_empty_is_none_not_crash():
+    from .scoring import aggregate
+
+    agg = aggregate({})
+    assert agg["groundedness"] is None and agg["abstention_rate"] is None
+
+
+def test_score_generation_skips_resumed_cases(monkeypatch):
+    """Resume must not re-spend quota on cases already scored."""
+    from . import scoring
+
+    called: list[str] = []
+
+    def fake_score_one(case, retriever, client, judge, k=None):
+        called.append(case.id)
+        return {"grounded": True, "correctness": 5, "citation_accuracy": 1.0}
+
+    monkeypatch.setattr(scoring, "score_one", fake_score_one)
+    monkeypatch.setattr(
+        "nom_rag.llm.base.get_client", lambda *a, **kw: FakeLLM()
+    )
+    monkeypatch.setattr("evals.judges.judge.make_judge", lambda: object())
+
+    cases = RETRIEVABLE_CASES[:3]
+    already = {cases[0].id: {"grounded": True, "correctness": 4, "citation_accuracy": 1.0}}
+    result = scoring.score_generation(
+        None, cases, progress=False, resume_from=already
+    )
+
+    assert called == [cases[1].id, cases[2].id], "re-scored an already-measured case"
+    assert len(result["per_case"]) == 3
+
+
+def test_score_generation_raises_quota_with_partial_results(monkeypatch):
+    from google.genai import errors as genai_errors  # noqa: F401  (shape reference)
+
+    from . import scoring
+
+    def fake_score_one(case, retriever, client, judge, k=None):
+        if case.id == RETRIEVABLE_CASES[1].id:
+            raise RuntimeError("429 RESOURCE_EXHAUSTED quota exceeded")
+        return {"grounded": True, "correctness": 5, "citation_accuracy": 1.0}
+
+    monkeypatch.setattr(scoring, "score_one", fake_score_one)
+    monkeypatch.setattr("nom_rag.llm.base.get_client", lambda *a, **kw: FakeLLM())
+    monkeypatch.setattr("evals.judges.judge.make_judge", lambda: object())
+
+    with pytest.raises(scoring.QuotaExhausted) as excinfo:
+        scoring.score_generation(None, RETRIEVABLE_CASES[:3], progress=False)
+
+    partial = excinfo.value.args[1]
+    assert RETRIEVABLE_CASES[0].id in partial, "partial results must survive the quota wall"
+
+
+def test_non_quota_errors_are_not_swallowed(monkeypatch):
+    from . import scoring
+
+    def boom(case, retriever, client, judge, k=None):
+        raise ValueError("bug real, no cuota")
+
+    monkeypatch.setattr(scoring, "score_one", boom)
+    monkeypatch.setattr("nom_rag.llm.base.get_client", lambda *a, **kw: FakeLLM())
+    monkeypatch.setattr("evals.judges.judge.make_judge", lambda: object())
+
+    with pytest.raises(ValueError):
+        scoring.score_generation(None, RETRIEVABLE_CASES[:1], progress=False)
+
+
 # ------------------------------------------------------------ dataset sanity
 
 
