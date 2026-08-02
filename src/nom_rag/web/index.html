@@ -5,241 +5,344 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>nom-rag · consulta de NOMs de seguridad laboral</title>
 <style>
+  /* Institutional-print direction: cool paper, ink-blue accent, hairline rules,
+     monospace reserved for the thing these documents are actually built on —
+     clause numbers. Colour carries state, never decoration. */
   :root {
-    --ground: #f7f6f3;
-    --panel: #ffffff;
-    --panel-2: #f1efea;
-    --ink: #16191c;
-    --ink-2: #4b5259;
-    --ink-3: #7b848c;
-    --line: #dfdcd5;
-    --accent: #0f766e;
-    --accent-soft: #d7ebe8;
-    --warn: #9a6206;
-    --warn-soft: #fbf0da;
-    --radius: 10px;
-    --mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, monospace;
-    --sans: ui-sans-serif, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    --paper:      #f4f5f3;
+    --panel:      #ffffff;
+    --panel-2:    #eeefec;
+    --ink:        #1b1f27;
+    --ink-2:      #545c6b;
+    --ink-3:      #838b98;
+    --rule:       #d8dbdf;
+    --rule-soft:  #e6e8eb;
+    --accent:     #2c4c7c;
+    --accent-2:   #eaeef5;
+    --verified:   #3f6b4f;
+    --verified-2: #e6efe8;
+    --flag:       #7d5c22;
+    --flag-2:     #f5eede;
+    --danger:     #8c3b34;
+    --r:          8px;
+    --mono: ui-monospace, "Cascadia Mono", "SF Mono", "Segoe UI Mono", Consolas, monospace;
+    --sans: ui-sans-serif, "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --ground: #101315;
-      --panel: #171b1e;
-      --panel-2: #1e2327;
-      --ink: #e8eaec;
-      --ink-2: #a9b2b9;
-      --ink-3: #78838b;
-      --line: #2a3034;
-      --accent: #4fd1c5;
-      --accent-soft: #16302e;
-      --warn: #e0a94a;
-      --warn-soft: #33280f;
+      --paper: #14171c; --panel: #1a1e25; --panel-2: #20252d;
+      --ink: #e0e4ea; --ink-2: #a3abb8; --ink-3: #737c8a;
+      --rule: #2b313a; --rule-soft: #232830;
+      --accent: #93aed4; --accent-2: #1e2733;
+      --verified: #7fa389; --verified-2: #1c2620;
+      --flag: #c2a069; --flag-2: #2a2519;
+      --danger: #cf8079;
     }
   }
   :root[data-theme="dark"] {
-    --ground: #101315; --panel: #171b1e; --panel-2: #1e2327;
-    --ink: #e8eaec; --ink-2: #a9b2b9; --ink-3: #78838b; --line: #2a3034;
-    --accent: #4fd1c5; --accent-soft: #16302e; --warn: #e0a94a; --warn-soft: #33280f;
+    --paper: #14171c; --panel: #1a1e25; --panel-2: #20252d;
+    --ink: #e0e4ea; --ink-2: #a3abb8; --ink-3: #737c8a;
+    --rule: #2b313a; --rule-soft: #232830;
+    --accent: #93aed4; --accent-2: #1e2733;
+    --verified: #7fa389; --verified-2: #1c2620;
+    --flag: #c2a069; --flag-2: #2a2519;
+    --danger: #cf8079;
   }
   :root[data-theme="light"] {
-    --ground: #f7f6f3; --panel: #ffffff; --panel-2: #f1efea;
-    --ink: #16191c; --ink-2: #4b5259; --ink-3: #7b848c; --line: #dfdcd5;
-    --accent: #0f766e; --accent-soft: #d7ebe8; --warn: #9a6206; --warn-soft: #fbf0da;
+    --paper: #f4f5f3; --panel: #ffffff; --panel-2: #eeefec;
+    --ink: #1b1f27; --ink-2: #545c6b; --ink-3: #838b98;
+    --rule: #d8dbdf; --rule-soft: #e6e8eb;
+    --accent: #2c4c7c; --accent-2: #eaeef5;
+    --verified: #3f6b4f; --verified-2: #e6efe8;
+    --flag: #7d5c22; --flag-2: #f5eede;
+    --danger: #8c3b34;
   }
 
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
-    margin: 0; background: var(--ground); color: var(--ink);
-    font-family: var(--sans); font-size: 15px; line-height: 1.55;
-    height: 100vh; display: flex; flex-direction: column;
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 15px; line-height: 1.6;
+    display: flex; flex-direction: column;
+    -webkit-font-smoothing: antialiased;
   }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
 
+  /* ---------------------------------------------------------------- header */
   header {
-    border-bottom: 1px solid var(--line); background: var(--panel);
-    padding: 10px 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    border-bottom: 1px solid var(--rule); background: var(--panel);
+    padding: 0 16px; display: flex; align-items: center; gap: 14px;
+    min-height: 52px; flex-wrap: wrap;
   }
-  .brand { font-weight: 650; letter-spacing: -0.01em; }
-  .brand span { color: var(--accent); font-family: var(--mono); }
-  .corpus { display: flex; gap: 5px; flex-wrap: wrap; }
+  .brand { font-weight: 640; letter-spacing: -0.015em; font-size: 15px; }
+  .brand em { font-style: normal; color: var(--ink-3); font-weight: 400; }
+  .corpus { display: flex; gap: 4px; flex-wrap: wrap; }
   .nom {
-    font-family: var(--mono); font-size: 11px; padding: 2px 7px;
-    border: 1px solid var(--line); border-radius: 20px; color: var(--ink-2);
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .02em;
+    padding: 2px 6px; border: 1px solid var(--rule); border-radius: 3px;
+    color: var(--ink-2); cursor: help;
   }
-  .meta { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .hactions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .ghost {
+    font: inherit; font-size: 12.5px; color: var(--ink-2); background: none;
+    border: 1px solid var(--rule); border-radius: var(--r); padding: 4px 10px;
+    cursor: pointer;
+  }
+  .ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .model { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
 
-  main { flex: 1; display: grid; grid-template-columns: minmax(0,1fr) 340px; min-height: 0; }
-  @media (max-width: 900px) { main { grid-template-columns: 1fr; } #inspector { display: none; } }
+  /* ------------------------------------------------------------------ main */
+  main { flex: 1; display: grid; grid-template-columns: minmax(0,1fr) 330px; min-height: 0; }
+  #conversation { overflow-y: auto; scroll-behavior: smooth; padding: 26px 16px 10px; }
+  .thread { max-width: 690px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
 
-  #conversation { overflow-y: auto; padding: 22px 18px 8px; }
-  .thread { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
-
-  .msg { display: flex; flex-direction: column; gap: 6px; }
+  /* --------------------------------------------------------------- message */
+  .msg { display: flex; flex-direction: column; gap: 7px; }
   .msg.user { align-items: flex-end; }
-  .bubble {
-    padding: 10px 14px; border-radius: var(--radius); max-width: 92%;
-    border: 1px solid var(--line); background: var(--panel);
+  .msg.user .bubble {
+    background: var(--panel-2); border: 1px solid var(--rule-soft);
+    border-radius: var(--r); padding: 8px 13px; max-width: 88%;
+    color: var(--ink); font-size: 14.5px;
   }
-  .msg.user .bubble { background: var(--accent-soft); border-color: transparent; }
-  .bubble p { margin: 0 0 .6em; }
-  .bubble p:last-child { margin-bottom: 0; }
-  .bubble ul { margin: .3em 0; padding-left: 1.1em; }
+  .answer {
+    background: var(--panel); border: 1px solid var(--rule);
+    border-left: 2px solid var(--accent);
+    border-radius: 0 var(--r) var(--r) 0; padding: 14px 17px;
+  }
+  .answer p { margin: 0 0 .7em; }
+  .answer p:last-child { margin-bottom: 0; }
+  .answer ul { margin: .4em 0; padding-left: 1.15em; }
+  .answer li { margin-bottom: .25em; }
+  .answer li::marker { color: var(--ink-3); }
 
+  /* Clause references read as document references, not UI chips. */
   .cite {
-    font-family: var(--mono); font-size: 12px; background: var(--accent-soft);
-    color: var(--accent); border: 1px solid transparent; border-radius: 5px;
-    padding: 1px 5px; cursor: pointer; white-space: nowrap;
+    font: inherit; font-family: var(--mono); font-size: 12.5px;
+    color: var(--accent); background: none; border: 0; padding: 0 1px;
+    border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    cursor: pointer; white-space: nowrap;
   }
-  .cite:hover, .cite:focus-visible { border-color: var(--accent); outline: none; }
+  .cite:hover { border-bottom-color: var(--accent); background: var(--accent-2); }
 
-  .msgmeta { font-family: var(--mono); font-size: 11px; color: var(--ink-3); display: flex; gap: 10px; flex-wrap: wrap; }
+  .msgmeta {
+    font-size: 11.5px; color: var(--ink-3); display: flex; gap: 12px;
+    flex-wrap: wrap; align-items: center; padding-left: 2px;
+  }
+  .msgmeta .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
   .msgmeta button {
     font: inherit; color: var(--ink-3); background: none; border: none;
-    cursor: pointer; padding: 0; text-decoration: underline dotted;
+    cursor: pointer; padding: 0;
   }
   .msgmeta button:hover { color: var(--accent); }
 
-  .rewrite {
-    font-size: 12px; background: var(--warn-soft); color: var(--warn);
-    border-radius: 6px; padding: 5px 9px; font-family: var(--mono);
+  .flagnote {
+    font-size: 12.5px; background: var(--flag-2); color: var(--flag);
+    border-radius: var(--r); padding: 7px 11px; border: 1px solid transparent;
   }
+  .flagnote b { font-weight: 600; }
+  .flagnote q { font-family: var(--mono); font-size: 12px; font-style: normal; }
 
-  #composer { border-top: 1px solid var(--line); background: var(--panel); padding: 12px 18px; }
-  .composer-inner { max-width: 720px; margin: 0 auto; display: flex; gap: 8px; }
-  textarea {
-    flex: 1; resize: none; font: inherit; color: var(--ink); background: var(--panel-2);
-    border: 1px solid var(--line); border-radius: var(--radius); padding: 9px 12px;
-    max-height: 140px;
+  /* ------------------------------------------------------------- inspector */
+  #inspector {
+    border-left: 1px solid var(--rule); background: var(--panel);
+    overflow-y: auto; padding: 18px 16px;
   }
-  textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  button.send {
-    font: inherit; font-weight: 600; color: var(--ground); background: var(--accent);
-    border: none; border-radius: var(--radius); padding: 0 18px; cursor: pointer;
+  .ins-head {
+    display: flex; align-items: baseline; gap: 8px; margin: 0 0 4px;
   }
-  button.send:disabled { opacity: .5; cursor: default; }
-
-  #inspector { border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; padding: 16px; }
   .ins-title {
-    font-family: var(--mono); font-size: 11px; text-transform: uppercase;
-    letter-spacing: .07em; color: var(--ink-3); margin: 0 0 10px;
+    font-family: var(--mono); font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: .09em; color: var(--ink-3); margin: 0;
   }
-  .chunk { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: var(--panel-2); }
-  .chunk.cited { border-color: var(--accent); }
-  .chunk-head { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; }
-  .chunk-id { color: var(--ink); font-weight: 600; }
-  .score { margin-left: auto; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-  .bar { height: 3px; background: var(--line); border-radius: 2px; margin: 6px 0; overflow: hidden; }
-  .bar i { display: block; height: 100%; background: var(--accent); }
-  .chunk-sec { font-size: 12px; color: var(--ink-2); }
+  .ins-sub { font-size: 12px; color: var(--ink-3); margin: 0 0 14px; }
+
+  .chunk {
+    border: 1px solid var(--rule-soft); border-radius: var(--r);
+    padding: 9px 11px; margin-bottom: 7px; background: var(--panel);
+  }
+  .chunk.cited { border-color: var(--verified); background: var(--verified-2); }
+  .chunk-head { display: flex; align-items: center; gap: 7px; }
+  .chunk-id { font-family: var(--mono); font-size: 11.5px; font-weight: 600; }
+  .tag {
+    font-family: var(--mono); font-size: 9.5px; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--verified);
+    border: 1px solid currentColor; border-radius: 3px; padding: 0 4px;
+  }
+  .score {
+    margin-left: auto; font-family: var(--mono); font-size: 11px;
+    color: var(--ink-3); font-variant-numeric: tabular-nums;
+  }
+  .bar { height: 2px; background: var(--rule-soft); margin: 7px 0 6px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--ink-3); }
+  .chunk.cited .bar i { background: var(--verified); }
+  .chunk-sec { font-size: 12px; color: var(--ink-2); line-height: 1.45; }
+  .chunk-more {
+    font: inherit; font-size: 11.5px; color: var(--accent); background: none;
+    border: none; padding: 4px 0 0; cursor: pointer;
+  }
   .chunk-text {
     display: none; font-size: 12.5px; color: var(--ink-2); white-space: pre-wrap;
-    margin-top: 7px; padding-top: 7px; border-top: 1px dashed var(--line);
-    max-height: 260px; overflow-y: auto;
+    margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--rule-soft);
+    max-height: 280px; overflow-y: auto; line-height: 1.5;
   }
   .chunk.open .chunk-text { display: block; }
-  .chunk-head button { font: inherit; background: none; border: none; color: var(--accent); cursor: pointer; padding: 0; }
 
-  .starters { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+  /* -------------------------------------------------------------- composer */
+  #composer { border-top: 1px solid var(--rule); background: var(--panel); padding: 12px 16px 14px; }
+  .cwrap { max-width: 690px; margin: 0 auto; display: flex; gap: 8px; align-items: flex-end; }
+  textarea {
+    flex: 1; resize: none; font: inherit; color: var(--ink); background: var(--paper);
+    border: 1px solid var(--rule); border-radius: var(--r); padding: 9px 12px;
+    max-height: 150px; line-height: 1.5;
+  }
+  textarea::placeholder { color: var(--ink-3); }
+  textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-2); }
+  .send {
+    font: inherit; font-weight: 600; font-size: 14px; color: var(--panel);
+    background: var(--accent); border: none; border-radius: var(--r);
+    padding: 9px 18px; cursor: pointer;
+  }
+  .send:disabled { opacity: .45; cursor: default; }
+  .hint { max-width: 690px; margin: 7px auto 0; font-size: 11.5px; color: var(--ink-3); }
+
+  /* ----------------------------------------------------------- empty state */
+  .intro h1 {
+    font-size: 21px; margin: 0 0 8px; letter-spacing: -0.02em; font-weight: 640;
+    text-wrap: balance;
+  }
+  .intro p { color: var(--ink-2); margin: 0 0 4px; max-width: 58ch; }
+  .starters { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; align-items: flex-start; }
   .starters button {
-    font: inherit; font-size: 13px; text-align: left; color: var(--ink-2);
-    background: var(--panel); border: 1px solid var(--line);
-    border-radius: 18px; padding: 6px 12px; cursor: pointer;
+    font: inherit; font-size: 13.5px; text-align: left; color: var(--ink-2);
+    background: var(--panel); border: 1px solid var(--rule);
+    border-radius: var(--r); padding: 7px 13px; cursor: pointer; max-width: 100%;
   }
   .starters button:hover { border-color: var(--accent); color: var(--accent); }
-  .intro { color: var(--ink-2); }
-  .intro h1 { font-size: 19px; margin: 0 0 6px; color: var(--ink); letter-spacing: -0.01em; }
+  .starters button::before { content: "→ "; color: var(--ink-3); }
 
-  .dots::after { content: "·"; animation: d 1.2s infinite; }
-  @keyframes d { 0%{content:"·"} 33%{content:"··"} 66%{content:"···"} }
-  @media (prefers-reduced-motion: reduce) { .dots::after { animation: none; content: "···"; } }
+  /* ------------------------------------------------------------- responsive */
+  .drawer-toggle { display: none; }
+  @media (max-width: 920px) {
+    main { grid-template-columns: 1fr; }
+    .drawer-toggle { display: inline-block; }
+    #inspector {
+      position: fixed; inset: 52px 0 0 auto; width: min(340px, 88vw); z-index: 20;
+      transform: translateX(101%); transition: transform .22s ease;
+      box-shadow: -8px 0 24px rgb(0 0 0 / .12);
+    }
+    #inspector.open { transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #inspector { transition: none; }
+    #conversation { scroll-behavior: auto; }
+    .dots::after { animation: none; content: "…"; }
+  }
+  .dots::after { content: "."; animation: d 1.1s steps(1) infinite; }
+  @keyframes d { 0%{content:"."} 33%{content:".."} 66%{content:"..."} }
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">nom<span>·</span>rag</div>
+  <div class="brand">nom-rag <em>· seguridad y salud en el trabajo</em></div>
   <div class="corpus" id="corpus"></div>
-  <div class="meta" id="meta">cargando…</div>
+  <div class="hactions">
+    <span class="model" id="model"></span>
+    <button class="ghost" id="reset" type="button" hidden>Nueva consulta</button>
+    <button class="ghost drawer-toggle" id="drawer" type="button" aria-expanded="false">Fuentes</button>
+  </div>
 </header>
 
 <main>
   <section id="conversation">
     <div class="thread" id="thread">
-      <div class="intro">
-        <h1>Consulta las NOMs de seguridad y salud en el trabajo</h1>
-        <p>Cada respuesta cita el numeral exacto — haz clic en una cita para leer el texto
-        original. Si la pregunta no está cubierta por las normas indexadas, lo dirá en vez
-        de inventar.</p>
+      <div class="intro" id="intro">
+        <h1>Consulta las Normas Oficiales Mexicanas de seguridad laboral</h1>
+        <p>Cada afirmación cita el numeral exacto. Haz clic en una cita para leer el texto
+           original de la cláusula y ver con qué puntaje se recuperó.</p>
+        <p>Si la pregunta no está cubierta por las cuatro normas indexadas, el sistema lo
+           dice en lugar de improvisar.</p>
         <div class="starters" id="starters"></div>
       </div>
     </div>
   </section>
 
-  <aside id="inspector">
-    <p class="ins-title">Recuperación</p>
-    <div id="chunks"><p style="color:var(--ink-3);font-size:13px">Aquí verás los extractos que sustentan cada respuesta.</p></div>
+  <aside id="inspector" aria-label="Fuentes recuperadas">
+    <div class="ins-head"><p class="ins-title">Fuentes</p></div>
+    <p class="ins-sub" id="ins-sub">Los extractos que sustentan cada respuesta aparecerán aquí.</p>
+    <div id="chunks"></div>
   </aside>
 </main>
 
 <form id="composer">
-  <div class="composer-inner">
-    <textarea id="q" rows="1" placeholder="Escribe tu pregunta…  (Enter envía, Shift+Enter salta línea)"></textarea>
-    <button class="send" id="send" type="submit">Enviar</button>
+  <div class="cwrap">
+    <textarea id="q" rows="1" aria-label="Tu pregunta"
+      placeholder="Pregunta sobre la NOM-035, NOM-019, NOM-017 o NOM-030…"></textarea>
+    <button class="send" id="send" type="submit">Consultar</button>
   </div>
+  <p class="hint">Enter envía · Shift+Enter salta línea · las preguntas de seguimiento usan el contexto de la conversación</p>
 </form>
 
 <script>
-const thread = document.getElementById('thread');
+const thread   = document.getElementById('thread');
 const chunksEl = document.getElementById('chunks');
-const qEl = document.getElementById('q');
-const sendBtn = document.getElementById('send');
-const history = [];
-const turnData = [];
+const insSub   = document.getElementById('ins-sub');
+const qEl      = document.getElementById('q');
+const sendBtn  = document.getElementById('send');
+const convEl   = document.getElementById('conversation');
+const resetBtn = document.getElementById('reset');
+const inspector= document.getElementById('inspector');
+
+let history = [];
+let turnData = [];
 
 const STARTERS = [
   '¿Cada cuánto debo evaluar el entorno organizacional?',
   '¿Quiénes integran la comisión de seguridad e higiene?',
-  '¿Cuándo hay que dar equipo de protección personal a un visitante?',
+  '¿Debo dar equipo de protección a los visitantes?',
   '¿Cuántos días de aguinaldo me tocan?'
 ];
 
-function esc(s) {
-  return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-}
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const scrollDown = () => convEl.scrollTo({ top: convEl.scrollHeight });
 
-// Turn "[NOM-035 §7.9]" into a chip that opens the clause in the inspector.
-// The chip carries its own turn index: clicking a citation in an older answer
-// must show THAT answer's retrieval, not whatever the inspector happens to
-// display, or it silently points at the wrong evidence.
+// "[NOM-035 §7.9]" becomes a reference that opens the clause it points at.
+// The turn index travels with it: a citation in an older answer must show THAT
+// answer's evidence, not whatever the panel happens to display.
 function renderAnswer(text, idx) {
-  const withCites = esc(text).replace(
-    /\[(NOM-\d{3})\s*§\s*([^\]]{1,40})\]/g,
-    (_, nom, num) =>
-      `<button class="cite" data-idx="${idx}" data-ref="${nom}:${num.trim()}">${nom} §${num.trim()}</button>`
-  );
-  return withCites
+  return esc(text)
+    // NOTE: this markup must stay on one line. Paragraph splitting below turns
+    // remaining newlines into <br>, which would land inside the tag and print
+    // the attributes as text.
+    .replace(/\[(NOM-\d{3})\s*§\s*([^\]]{1,40})\]/g,
+      (_, nom, num) => `<button class="cite" data-idx="${idx}" data-ref="${nom}:${num.trim()}" title="Ver el texto de la cláusula">${nom} §${num.trim()}</button>`)
     .split(/\n{2,}/)
     .map(block => {
       const lines = block.split('\n');
-      if (lines.every(l => /^\s*[*\-•]\s+/.test(l))) {
+      if (lines.every(l => /^\s*[*\-•]\s+/.test(l)))
         return '<ul>' + lines.map(l => `<li>${l.replace(/^\s*[*\-•]\s+/, '')}</li>`).join('') + '</ul>';
-      }
       return `<p>${lines.join('<br>')}</p>`;
-    })
-    .join('');
+    }).join('');
 }
 
 function showRetrieval(idx) {
   const data = turnData[idx];
   if (!data) return;
+  const cited = data.retrieved.filter(c => c.cited).length;
+  insSub.textContent =
+    `${data.retrieved.length} extractos recuperados · ${cited} citado${cited === 1 ? '' : 's'}`;
+  // scale bars across the range actually present, so differences stay visible
+  const scores = data.retrieved.map(c => c.score);
+  const lo = Math.min(...scores), hi = Math.max(...scores), span = Math.max(hi - lo, 0.02);
   chunksEl.innerHTML = data.retrieved.map(c => `
     <div class="chunk ${c.cited ? 'cited' : ''}" data-chunk="${esc(c.chunk_id)}">
       <div class="chunk-head">
         <span class="chunk-id">${esc(c.chunk_id)}</span>
-        ${c.cited ? '<span style="color:var(--accent)">citado</span>' : ''}
+        ${c.cited ? '<span class="tag">citado</span>' : ''}
         <span class="score">${c.score.toFixed(3)}</span>
       </div>
-      <div class="bar"><i style="width:${Math.max(0, Math.min(100, (c.score - 0.75) * 400))}%"></i></div>
+      <div class="bar"><i style="width:${(12 + 88 * (c.score - lo) / span).toFixed(1)}%"></i></div>
       <div class="chunk-sec">${esc(c.section_title)}</div>
-      <div class="chunk-head" style="margin-top:5px"><button type="button" class="toggle">ver texto</button></div>
+      <button class="chunk-more" type="button">Ver texto de la norma</button>
       <div class="chunk-text">${esc(c.text)}</div>
     </div>`).join('');
 }
@@ -251,52 +354,57 @@ function addUser(text) {
   thread.appendChild(el);
 }
 
-function addPending() {
+function addPending(isFollowUp) {
   const el = document.createElement('div');
   el.className = 'msg';
-  el.innerHTML = `<div class="bubble"><span class="dots">consultando las normas</span></div>`;
+  el.innerHTML = `<div class="answer" style="color:var(--ink-3)"><span class="dots">${
+    isFollowUp ? 'Interpretando tu pregunta con el contexto anterior' : 'Buscando en las normas'
+  }</span></div>`;
   thread.appendChild(el);
   return el;
 }
 
 async function send(question) {
-  const intro = thread.querySelector('.intro');
-  if (intro) intro.remove();
+  document.getElementById('intro')?.remove();
+  resetBtn.hidden = false;
   addUser(question);
-  const pending = addPending();
-  thread.scrollIntoView(false);
+  const pending = addPending(history.length > 0);
+  scrollDown();
   sendBtn.disabled = true;
 
   try {
     const res = await fetch('/api/chat', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question, history })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'error');
+    if (!res.ok) throw new Error(data.detail || `Error ${res.status}`);
 
     const idx = turnData.push(data) - 1;
     history.push({ question, answer: data.answer });
 
-    const rewriteNote = data.rewritten
-      ? `<div class="rewrite">Reescribí la búsqueda como: “${esc(data.retrieval_query)}”</div>` : '';
+    const note = data.rewritten
+      ? `<div class="flagnote"><b>Búsqueda reformulada</b> con el contexto de la conversación:
+         <q>${esc(data.retrieval_query)}</q></div>` : '';
     pending.innerHTML = `
-      ${rewriteNote}
-      <div class="bubble">${renderAnswer(data.answer, idx)}</div>
+      ${note}
+      <div class="answer">${renderAnswer(data.answer, idx)}</div>
       <div class="msgmeta">
-        <span>${data.latency_ms.total} ms</span>
-        <span>${esc(data.model)}</span>
-        <button type="button" data-idx="${idx}" class="showret">ver recuperación</button>
-        <span>trace ${esc(data.trace_id)}</span>
+        <span class="num">${data.latency_ms.total} ms</span>
+        <button type="button" class="showret" data-idx="${idx}">Ver fuentes</button>
+        <button type="button" class="copy" data-idx="${idx}">Copiar</button>
+        <span class="num" title="Identificador de la traza para auditoría">${esc(data.trace_id)}</span>
       </div>`;
     showRetrieval(idx);
   } catch (err) {
-    pending.innerHTML = `<div class="bubble" style="border-color:var(--warn);color:var(--warn)">${esc(String(err.message || err))}</div>`;
+    pending.innerHTML =
+      `<div class="answer" style="border-left-color:var(--danger);color:var(--danger)">
+         ${esc(String(err.message || err))}</div>`;
   } finally {
     sendBtn.disabled = false;
     qEl.focus();
-    thread.scrollIntoView(false);
+    scrollDown();
   }
 }
 
@@ -310,7 +418,7 @@ document.getElementById('composer').addEventListener('submit', e => {
 
 qEl.addEventListener('input', () => {
   qEl.style.height = 'auto';
-  qEl.style.height = Math.min(qEl.scrollHeight, 140) + 'px';
+  qEl.style.height = Math.min(qEl.scrollHeight, 150) + 'px';
 });
 qEl.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) {
@@ -319,49 +427,105 @@ qEl.addEventListener('keydown', e => {
   }
 });
 
+resetBtn.addEventListener('click', () => {
+  history = []; turnData = [];
+  thread.innerHTML = '';
+  chunksEl.innerHTML = '';
+  insSub.textContent = 'Los extractos que sustentan cada respuesta aparecerán aquí.';
+  resetBtn.hidden = true;
+  renderIntro();
+  qEl.focus();
+});
+
+document.getElementById('drawer').addEventListener('click', e => {
+  const open = inspector.classList.toggle('open');
+  e.currentTarget.setAttribute('aria-expanded', String(open));
+});
+
 document.addEventListener('click', e => {
   const cite = e.target.closest('.cite');
   if (cite) {
-    showRetrieval(Number(cite.dataset.idx));   // evidence of THIS answer, not the last one
+    showRetrieval(Number(cite.dataset.idx));
     const [nom, numeral] = cite.dataset.ref.split(':');
-    const chunks = [...chunksEl.querySelectorAll('.chunk')];
-    // the cited clause may live inside a chunk numbered differently (§7.9 sits
-    // in chunk NOM-035:7.7), so fall back to the chunks the API marked as cited
+    const all = [...chunksEl.querySelectorAll('.chunk')];
+    // a cited clause can live inside a chunk numbered differently (§7.9 sits in
+    // chunk NOM-035:7.7), so fall back to what the API flagged as cited
     const target =
-      chunks.find(c => c.dataset.chunk === `${nom}:${numeral}`) ||
-      chunks.find(c => c.dataset.chunk.startsWith(`${nom}:${numeral}`)) ||
-      chunks.find(c => c.classList.contains('cited') && c.dataset.chunk.startsWith(nom));
+      all.find(c => c.dataset.chunk === `${nom}:${numeral}`) ||
+      all.find(c => c.dataset.chunk.startsWith(`${nom}:${numeral}`)) ||
+      all.find(c => c.classList.contains('cited') && c.dataset.chunk.startsWith(nom));
     if (target) {
       target.classList.add('open');
-      const toggle = target.querySelector('.toggle');
-      if (toggle) toggle.textContent = 'ocultar texto';
+      const more = target.querySelector('.chunk-more');
+      if (more) more.textContent = 'Ocultar texto';
+      inspector.classList.add('open');
+      document.getElementById('drawer').setAttribute('aria-expanded', 'true');
       target.scrollIntoView({ block: 'nearest' });
     }
     return;
   }
-  const toggle = e.target.closest('.toggle');
-  if (toggle) {
-    const chunk = toggle.closest('.chunk');
-    chunk.classList.toggle('open');
-    toggle.textContent = chunk.classList.contains('open') ? 'ocultar texto' : 'ver texto';
+  const more = e.target.closest('.chunk-more');
+  if (more) {
+    const chunk = more.closest('.chunk');
+    const open = chunk.classList.toggle('open');
+    more.textContent = open ? 'Ocultar texto' : 'Ver texto de la norma';
     return;
   }
   const showret = e.target.closest('.showret');
-  if (showret) showRetrieval(Number(showret.dataset.idx));
+  if (showret) {
+    showRetrieval(Number(showret.dataset.idx));
+    inspector.classList.add('open');
+    return;
+  }
+  const copy = e.target.closest('.copy');
+  if (copy) {
+    const d = turnData[Number(copy.dataset.idx)];
+    const refs = d.citations.map(c => c.ref).join(', ');
+    const payload = d.answer + (refs ? `\n\nFuentes: ${refs}` : '');
+    const flash = msg => { copy.textContent = msg; setTimeout(() => (copy.textContent = 'Copiar'), 1600); };
+    // clipboard API rejects without focus or permission; fall back rather than
+    // leaving the button silently inert
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = payload; ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:-1000px';
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      flash(ok ? 'Copiado' : 'No se pudo copiar');
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(payload).then(() => flash('Copiado')).catch(fallback);
+    } else {
+      fallback();
+    }
+  }
+});
+
+function renderIntro() {
+  thread.innerHTML = `
+    <div class="intro" id="intro">
+      <h1>Consulta las Normas Oficiales Mexicanas de seguridad laboral</h1>
+      <p>Cada afirmación cita el numeral exacto. Haz clic en una cita para leer el texto
+         original de la cláusula y ver con qué puntaje se recuperó.</p>
+      <p>Si la pregunta no está cubierta por las cuatro normas indexadas, el sistema lo
+         dice en lugar de improvisar.</p>
+      <div class="starters">${STARTERS.map(s => `<button type="button">${esc(s)}</button>`).join('')}</div>
+    </div>`;
+}
+
+thread.addEventListener('click', e => {
+  const b = e.target.closest('.starters button');
+  if (b) send(b.textContent.replace(/^→\s*/, ''));
 });
 
 fetch('/api/health').then(r => r.json()).then(h => {
   document.getElementById('corpus').innerHTML =
-    h.corpus.map(c => `<span class="nom" title="${esc(c.title)}">${esc(c.short_id)}</span>`).join('');
-  document.getElementById('meta').textContent = h.generation_model;
-});
+    h.corpus.map(c => `<span class="nom" title="${esc(c.nom_id)} — ${esc(c.title)}">${esc(c.short_id)}</span>`).join('');
+  document.getElementById('model').textContent = h.generation_model;
+}).catch(() => {});
 
-document.getElementById('starters').innerHTML =
-  STARTERS.map(s => `<button type="button">${esc(s)}</button>`).join('');
-document.getElementById('starters').addEventListener('click', e => {
-  const b = e.target.closest('button');
-  if (b) send(b.textContent);
-});
+renderIntro();
 qEl.focus();
 </script>
 </body>
