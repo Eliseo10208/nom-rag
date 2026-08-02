@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "nom-rag-web",
+      "runtimeExecutable": "C:/Users/elise/.venvs/nom-rag/Scripts/python.exe",
+      "runtimeArgs": ["-X", "utf8", "-m", "uvicorn", "nom_rag.api:app", "--port", "8017"],
+      "port": 8017
+    }
+  ]
+}

@@ -59,6 +59,25 @@ question ──► e5-small embedding ──► ChromaDB (cosine, k=5) ──►
   harness tests. Pipeline and judge only see the interface — swapping is a config change.
 - **Citation contract in the prompt**: every claim must cite `[NOM-035 §7.9]`; questions
   outside the corpus must use a literal abstention phrase. Both are machine-checkable.
+- **Follow-up questions** are rewritten into standalone queries before retrieval —
+  "¿y si tengo 30 empleados?" embeds to nothing on its own. The rewrite only replaces the
+  *retrieval query*; the answer is still generated from the literal question, so a bad
+  rewrite degrades retrieval instead of silently changing what was asked. The first turn
+  has no history and is never rewritten, so it costs no extra call.
+
+### Interfaces
+
+```bash
+nom-rag ask "¿Quiénes integran la comisión?"   # one-shot
+nom-rag chat                                   # terminal REPL, model loaded once
+uvicorn nom_rag.api:app --port 8017            # web chat at http://localhost:8017
+```
+
+The web UI is built around auditing rather than chatting: citations are chips that open
+the actual clause text, a side panel shows every retrieved chunk with its similarity score
+and whether it was cited, and a banner shows the rewritten query whenever a follow-up was
+reformulated. Clicking a citation in an older message restores *that* message's retrieval
+— pointing at the wrong evidence would defeat the purpose.
 
 ## The evaluation harness
 
@@ -77,6 +96,7 @@ re-chunking never invalidates the dataset. Bugs found in production become cases
 |---|---|---|---|
 | Retrieval metrics | hit-rate@k, recall@k, MRR vs expected clauses | free, deterministic | every push (CI) |
 | Deterministic answer checks | citation accuracy (cited clause exists in retrieved context), abstention on out-of-scope | free, deterministic | with generation evals |
+| Follow-up rewriting | 8 multi-turn cases: does the rewritten query still retrieve the right clause? | 8 LLM calls | `pytest evals -m llm` |
 | LLM-as-judge | groundedness (claim-by-claim vs context), correctness 1–5 vs reference answer | ~90 LLM calls | `pytest evals -m llm`, manual CI |
 
 The judge only handles what needs comprehension. Citation validity and abstention are
@@ -106,6 +126,13 @@ Generation, run `baseline-gen` (34/34 cases, generation `gemini-3.1-flash-lite`,
 | abstention | **0.80** | ≥ 0.75 | 4 of 5 out-of-corpus questions correctly declined |
 
 The one abstention failure is analyzed below — it is a real defect, not rounding.
+
+Follow-up rewriting (8 multi-turn cases): **7/8 = 0.875**, gate ≥ 0.75. The failure is
+instructive and *not* a rewriter bug: the user says "fuera de programa" while the norm
+says "verificaciones extraordinarias", and e5-small does not bridge that vocabulary gap —
+confirmed by checking that the norm's own phrasing retrieves the clause fine. Chat was
+added *with* its evals, not before them: adding conversation without covering it would
+have created exactly the untested path this repo argues against.
 
 ¹ `evals/runs/baseline-gen.json` stores `0.807`, the value measured by the checker *at the
 time of the run*; `baseline-gen-rescored.json` holds the `1.00` produced by re-running the

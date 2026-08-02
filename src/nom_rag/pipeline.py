@@ -67,6 +67,8 @@ class AskResult:
     model: str
     usage: dict
     latency_ms: dict
+    retrieval_query: str = ""  # differs from the question on rewritten follow-ups
+    rewritten: bool = False
 
 
 def extract_citations(answer: str) -> list[str]:
@@ -84,10 +86,22 @@ def extract_citations(answer: str) -> list[str]:
     return seen
 
 
-def build_prompt(question: str, retrieved: list[RetrievedChunk]) -> str:
+def build_prompt(
+    question: str, retrieved: list[RetrievedChunk], history: list | None = None
+) -> str:
     context = "\n\n---\n\n".join(chunk.text for chunk in retrieved)
+    # With no history the output is byte-identical to the single-turn prompt the
+    # eval baseline was measured on — chat must not silently change that path.
+    preface = ""
+    if history:
+        from nom_rag.conversation import format_history
+
+        preface = (
+            f"Conversación previa (solo como contexto; responde la última pregunta):\n"
+            f"{format_history(history)}\n\n"
+        )
     return (
-        f"Extractos de las NOMs (contexto):\n\n{context}\n\n"
+        f"{preface}Extractos de las NOMs (contexto):\n\n{context}\n\n"
         f"Pregunta del usuario: {question}"
     )
 
@@ -98,11 +112,21 @@ def ask(
     client: LLMClient,
     k: int | None = None,
     write: bool = True,
+    history: list | None = None,
 ) -> AskResult:
+    """Answer `question`. With `history`, the retrieval query is rewritten to be
+    standalone first; the answer is still generated from the literal question."""
     t0 = time.perf_counter()
-    retrieved = retriever.query(question, k=k)
+    query, rewritten = question, False
+    if history:
+        from nom_rag.conversation import rewrite_question
+
+        query, rewritten = rewrite_question(question, history, client)
+    retrieved = retriever.query(query, k=k)
     t1 = time.perf_counter()
-    response = client.complete(build_prompt(question, retrieved), system=SYSTEM_PROMPT)
+    response = client.complete(
+        build_prompt(question, retrieved, history), system=SYSTEM_PROMPT
+    )
     t2 = time.perf_counter()
 
     citations = extract_citations(response.text)
@@ -125,6 +149,8 @@ def ask(
             "output_tokens": response.output_tokens,
         },
         latency_ms=latency,
+        retrieval_query=query,
+        rewritten=rewritten,
     )
     if write:
         write_trace(trace)
@@ -136,4 +162,6 @@ def ask(
         model=response.model,
         usage=trace.usage,
         latency_ms=latency,
+        retrieval_query=query,
+        rewritten=rewritten,
     )

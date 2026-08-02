@@ -1,0 +1,83 @@
+"""Follow-up handling: turn a context-dependent question into a standalone one.
+
+Retrieval embeds the question, so "¿y con 30 empleados?" retrieves nothing —
+its embedding carries none of the subject the user is actually asking about.
+The fix is to rewrite it against the conversation before retrieving.
+
+Two properties keep the cost and the blast radius small:
+- the first turn has no history, so it is never rewritten (no LLM call);
+- the rewrite only ever replaces the *retrieval query*. The answer is still
+  generated from the user's literal question plus the retrieved context, so a
+  bad rewrite degrades retrieval instead of silently changing what was asked.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from pydantic import BaseModel, Field
+
+from nom_rag.llm.base import LLMClient
+
+MAX_HISTORY_TURNS = 4  # older turns rarely disambiguate and cost prompt tokens
+
+
+@dataclass
+class Turn:
+    question: str
+    answer: str
+
+
+class RewrittenQuery(BaseModel):
+    needs_rewrite: bool = Field(
+        description="true solo si la pregunta depende del historial para entenderse"
+    )
+    standalone_question: str = Field(
+        description="La pregunta reformulada de forma autónoma, o la original si no hacía falta"
+    )
+
+
+REWRITE_SYSTEM = """Reformulas preguntas de seguimiento para un buscador de normas oficiales \
+mexicanas de seguridad laboral (NOM-035, NOM-019, NOM-017, NOM-030).
+
+Recibes el historial de la conversación y la última pregunta del usuario. Tu tarea es \
+devolver una pregunta AUTÓNOMA: que se entienda por sí sola, sin el historial.
+
+Reglas:
+- Sustituye pronombres y referencias implícitas ("eso", "ahí", "y si...", "¿y con...?") \
+por el sujeto explícito que aparece en el historial.
+- Conserva la intención y los datos concretos de la pregunta original (cifras, plazos).
+- Si la pregunta ya se entiende sola, devuélvela sin cambios y marca needs_rewrite=false.
+- NO respondas la pregunta. NO agregues información que el usuario no pidió.
+- Responde en español."""
+
+
+def format_history(history: list[Turn], max_turns: int = MAX_HISTORY_TURNS) -> str:
+    recent = history[-max_turns:]
+    return "\n".join(
+        f"Usuario: {turn.question}\nAsistente: {turn.answer}" for turn in recent
+    )
+
+
+def rewrite_question(
+    question: str, history: list[Turn], client: LLMClient
+) -> tuple[str, bool]:
+    """Return (query_for_retrieval, was_rewritten). No history -> no LLM call."""
+    if not history:
+        return question, False
+
+    prompt = (
+        f"Historial de la conversación:\n{format_history(history)}\n\n"
+        f"Última pregunta del usuario: {question}"
+    )
+    response = client.complete(
+        prompt,
+        system=REWRITE_SYSTEM,
+        response_model=RewrittenQuery,
+        max_tokens=1024,
+    )
+    result = RewrittenQuery.model_validate_json(response.text)
+    rewritten = result.standalone_question.strip()
+    if not result.needs_rewrite or not rewritten:
+        return question, False
+    return rewritten, rewritten != question

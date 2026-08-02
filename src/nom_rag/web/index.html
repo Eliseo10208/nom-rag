@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>nom-rag · consulta de NOMs de seguridad laboral</title>
+<style>
+  :root {
+    --ground: #f7f6f3;
+    --panel: #ffffff;
+    --panel-2: #f1efea;
+    --ink: #16191c;
+    --ink-2: #4b5259;
+    --ink-3: #7b848c;
+    --line: #dfdcd5;
+    --accent: #0f766e;
+    --accent-soft: #d7ebe8;
+    --warn: #9a6206;
+    --warn-soft: #fbf0da;
+    --radius: 10px;
+    --mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, monospace;
+    --sans: ui-sans-serif, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #101315;
+      --panel: #171b1e;
+      --panel-2: #1e2327;
+      --ink: #e8eaec;
+      --ink-2: #a9b2b9;
+      --ink-3: #78838b;
+      --line: #2a3034;
+      --accent: #4fd1c5;
+      --accent-soft: #16302e;
+      --warn: #e0a94a;
+      --warn-soft: #33280f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #101315; --panel: #171b1e; --panel-2: #1e2327;
+    --ink: #e8eaec; --ink-2: #a9b2b9; --ink-3: #78838b; --line: #2a3034;
+    --accent: #4fd1c5; --accent-soft: #16302e; --warn: #e0a94a; --warn-soft: #33280f;
+  }
+  :root[data-theme="light"] {
+    --ground: #f7f6f3; --panel: #ffffff; --panel-2: #f1efea;
+    --ink: #16191c; --ink-2: #4b5259; --ink-3: #7b848c; --line: #dfdcd5;
+    --accent: #0f766e; --accent-soft: #d7ebe8; --warn: #9a6206; --warn-soft: #fbf0da;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--sans); font-size: 15px; line-height: 1.55;
+    height: 100vh; display: flex; flex-direction: column;
+  }
+
+  header {
+    border-bottom: 1px solid var(--line); background: var(--panel);
+    padding: 10px 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 650; letter-spacing: -0.01em; }
+  .brand span { color: var(--accent); font-family: var(--mono); }
+  .corpus { display: flex; gap: 5px; flex-wrap: wrap; }
+  .nom {
+    font-family: var(--mono); font-size: 11px; padding: 2px 7px;
+    border: 1px solid var(--line); border-radius: 20px; color: var(--ink-2);
+  }
+  .meta { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+
+  main { flex: 1; display: grid; grid-template-columns: minmax(0,1fr) 340px; min-height: 0; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } #inspector { display: none; } }
+
+  #conversation { overflow-y: auto; padding: 22px 18px 8px; }
+  .thread { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+
+  .msg { display: flex; flex-direction: column; gap: 6px; }
+  .msg.user { align-items: flex-end; }
+  .bubble {
+    padding: 10px 14px; border-radius: var(--radius); max-width: 92%;
+    border: 1px solid var(--line); background: var(--panel);
+  }
+  .msg.user .bubble { background: var(--accent-soft); border-color: transparent; }
+  .bubble p { margin: 0 0 .6em; }
+  .bubble p:last-child { margin-bottom: 0; }
+  .bubble ul { margin: .3em 0; padding-left: 1.1em; }
+
+  .cite {
+    font-family: var(--mono); font-size: 12px; background: var(--accent-soft);
+    color: var(--accent); border: 1px solid transparent; border-radius: 5px;
+    padding: 1px 5px; cursor: pointer; white-space: nowrap;
+  }
+  .cite:hover, .cite:focus-visible { border-color: var(--accent); outline: none; }
+
+  .msgmeta { font-family: var(--mono); font-size: 11px; color: var(--ink-3); display: flex; gap: 10px; flex-wrap: wrap; }
+  .msgmeta button {
+    font: inherit; color: var(--ink-3); background: none; border: none;
+    cursor: pointer; padding: 0; text-decoration: underline dotted;
+  }
+  .msgmeta button:hover { color: var(--accent); }
+
+  .rewrite {
+    font-size: 12px; background: var(--warn-soft); color: var(--warn);
+    border-radius: 6px; padding: 5px 9px; font-family: var(--mono);
+  }
+
+  #composer { border-top: 1px solid var(--line); background: var(--panel); padding: 12px 18px; }
+  .composer-inner { max-width: 720px; margin: 0 auto; display: flex; gap: 8px; }
+  textarea {
+    flex: 1; resize: none; font: inherit; color: var(--ink); background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 9px 12px;
+    max-height: 140px;
+  }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button.send {
+    font: inherit; font-weight: 600; color: var(--ground); background: var(--accent);
+    border: none; border-radius: var(--radius); padding: 0 18px; cursor: pointer;
+  }
+  button.send:disabled { opacity: .5; cursor: default; }
+
+  #inspector { border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; padding: 16px; }
+  .ins-title {
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--ink-3); margin: 0 0 10px;
+  }
+  .chunk { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: var(--panel-2); }
+  .chunk.cited { border-color: var(--accent); }
+  .chunk-head { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; }
+  .chunk-id { color: var(--ink); font-weight: 600; }
+  .score { margin-left: auto; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .bar { height: 3px; background: var(--line); border-radius: 2px; margin: 6px 0; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); }
+  .chunk-sec { font-size: 12px; color: var(--ink-2); }
+  .chunk-text {
+    display: none; font-size: 12.5px; color: var(--ink-2); white-space: pre-wrap;
+    margin-top: 7px; padding-top: 7px; border-top: 1px dashed var(--line);
+    max-height: 260px; overflow-y: auto;
+  }
+  .chunk.open .chunk-text { display: block; }
+  .chunk-head button { font: inherit; background: none; border: none; color: var(--accent); cursor: pointer; padding: 0; }
+
+  .starters { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+  .starters button {
+    font: inherit; font-size: 13px; text-align: left; color: var(--ink-2);
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 18px; padding: 6px 12px; cursor: pointer;
+  }
+  .starters button:hover { border-color: var(--accent); color: var(--accent); }
+  .intro { color: var(--ink-2); }
+  .intro h1 { font-size: 19px; margin: 0 0 6px; color: var(--ink); letter-spacing: -0.01em; }
+
+  .dots::after { content: "·"; animation: d 1.2s infinite; }
+  @keyframes d { 0%{content:"·"} 33%{content:"··"} 66%{content:"···"} }
+  @media (prefers-reduced-motion: reduce) { .dots::after { animation: none; content: "···"; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">nom<span>·</span>rag</div>
+  <div class="corpus" id="corpus"></div>
+  <div class="meta" id="meta">cargando…</div>
+</header>
+
+<main>
+  <section id="conversation">
+    <div class="thread" id="thread">
+      <div class="intro">
+        <h1>Consulta las NOMs de seguridad y salud en el trabajo</h1>
+        <p>Cada respuesta cita el numeral exacto — haz clic en una cita para leer el texto
+        original. Si la pregunta no está cubierta por las normas indexadas, lo dirá en vez
+        de inventar.</p>
+        <div class="starters" id="starters"></div>
+      </div>
+    </div>
+  </section>
+
+  <aside id="inspector">
+    <p class="ins-title">Recuperación</p>
+    <div id="chunks"><p style="color:var(--ink-3);font-size:13px">Aquí verás los extractos que sustentan cada respuesta.</p></div>
+  </aside>
+</main>
+
+<form id="composer">
+  <div class="composer-inner">
+    <textarea id="q" rows="1" placeholder="Escribe tu pregunta…  (Enter envía, Shift+Enter salta línea)"></textarea>
+    <button class="send" id="send" type="submit">Enviar</button>
+  </div>
+</form>
+
+<script>
+const thread = document.getElementById('thread');
+const chunksEl = document.getElementById('chunks');
+const qEl = document.getElementById('q');
+const sendBtn = document.getElementById('send');
+const history = [];
+const turnData = [];
+
+const STARTERS = [
+  '¿Cada cuánto debo evaluar el entorno organizacional?',
+  '¿Quiénes integran la comisión de seguridad e higiene?',
+  '¿Cuándo hay que dar equipo de protección personal a un visitante?',
+  '¿Cuántos días de aguinaldo me tocan?'
+];
+
+function esc(s) {
+  return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+// Turn "[NOM-035 §7.9]" into a chip that opens the clause in the inspector.
+// The chip carries its own turn index: clicking a citation in an older answer
+// must show THAT answer's retrieval, not whatever the inspector happens to
+// display, or it silently points at the wrong evidence.
+function renderAnswer(text, idx) {
+  const withCites = esc(text).replace(
+    /\[(NOM-\d{3})\s*§\s*([^\]]{1,40})\]/g,
+    (_, nom, num) =>
+      `<button class="cite" data-idx="${idx}" data-ref="${nom}:${num.trim()}">${nom} §${num.trim()}</button>`
+  );
+  return withCites
+    .split(/\n{2,}/)
+    .map(block => {
+      const lines = block.split('\n');
+      if (lines.every(l => /^\s*[*\-•]\s+/.test(l))) {
+        return '<ul>' + lines.map(l => `<li>${l.replace(/^\s*[*\-•]\s+/, '')}</li>`).join('') + '</ul>';
+      }
+      return `<p>${lines.join('<br>')}</p>`;
+    })
+    .join('');
+}
+
+function showRetrieval(idx) {
+  const data = turnData[idx];
+  if (!data) return;
+  chunksEl.innerHTML = data.retrieved.map(c => `
+    <div class="chunk ${c.cited ? 'cited' : ''}" data-chunk="${esc(c.chunk_id)}">
+      <div class="chunk-head">
+        <span class="chunk-id">${esc(c.chunk_id)}</span>
+        ${c.cited ? '<span style="color:var(--accent)">citado</span>' : ''}
+        <span class="score">${c.score.toFixed(3)}</span>
+      </div>
+      <div class="bar"><i style="width:${Math.max(0, Math.min(100, (c.score - 0.75) * 400))}%"></i></div>
+      <div class="chunk-sec">${esc(c.section_title)}</div>
+      <div class="chunk-head" style="margin-top:5px"><button type="button" class="toggle">ver texto</button></div>
+      <div class="chunk-text">${esc(c.text)}</div>
+    </div>`).join('');
+}
+
+function addUser(text) {
+  const el = document.createElement('div');
+  el.className = 'msg user';
+  el.innerHTML = `<div class="bubble">${esc(text)}</div>`;
+  thread.appendChild(el);
+}
+
+function addPending() {
+  const el = document.createElement('div');
+  el.className = 'msg';
+  el.innerHTML = `<div class="bubble"><span class="dots">consultando las normas</span></div>`;
+  thread.appendChild(el);
+  return el;
+}
+
+async function send(question) {
+  const intro = thread.querySelector('.intro');
+  if (intro) intro.remove();
+  addUser(question);
+  const pending = addPending();
+  thread.scrollIntoView(false);
+  sendBtn.disabled = true;
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ question, history })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'error');
+
+    const idx = turnData.push(data) - 1;
+    history.push({ question, answer: data.answer });
+
+    const rewriteNote = data.rewritten
+      ? `<div class="rewrite">Reescribí la búsqueda como: “${esc(data.retrieval_query)}”</div>` : '';
+    pending.innerHTML = `
+      ${rewriteNote}
+      <div class="bubble">${renderAnswer(data.answer, idx)}</div>
+      <div class="msgmeta">
+        <span>${data.latency_ms.total} ms</span>
+        <span>${esc(data.model)}</span>
+        <button type="button" data-idx="${idx}" class="showret">ver recuperación</button>
+        <span>trace ${esc(data.trace_id)}</span>
+      </div>`;
+    showRetrieval(idx);
+  } catch (err) {
+    pending.innerHTML = `<div class="bubble" style="border-color:var(--warn);color:var(--warn)">${esc(String(err.message || err))}</div>`;
+  } finally {
+    sendBtn.disabled = false;
+    qEl.focus();
+    thread.scrollIntoView(false);
+  }
+}
+
+document.getElementById('composer').addEventListener('submit', e => {
+  e.preventDefault();
+  const text = qEl.value.trim();
+  if (!text || sendBtn.disabled) return;
+  qEl.value = ''; qEl.style.height = 'auto';
+  send(text);
+});
+
+qEl.addEventListener('input', () => {
+  qEl.style.height = 'auto';
+  qEl.style.height = Math.min(qEl.scrollHeight, 140) + 'px';
+});
+qEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    document.getElementById('composer').requestSubmit();
+  }
+});
+
+document.addEventListener('click', e => {
+  const cite = e.target.closest('.cite');
+  if (cite) {
+    showRetrieval(Number(cite.dataset.idx));   // evidence of THIS answer, not the last one
+    const [nom, numeral] = cite.dataset.ref.split(':');
+    const chunks = [...chunksEl.querySelectorAll('.chunk')];
+    // the cited clause may live inside a chunk numbered differently (§7.9 sits
+    // in chunk NOM-035:7.7), so fall back to the chunks the API marked as cited
+    const target =
+      chunks.find(c => c.dataset.chunk === `${nom}:${numeral}`) ||
+      chunks.find(c => c.dataset.chunk.startsWith(`${nom}:${numeral}`)) ||
+      chunks.find(c => c.classList.contains('cited') && c.dataset.chunk.startsWith(nom));
+    if (target) {
+      target.classList.add('open');
+      const toggle = target.querySelector('.toggle');
+      if (toggle) toggle.textContent = 'ocultar texto';
+      target.scrollIntoView({ block: 'nearest' });
+    }
+    return;
+  }
+  const toggle = e.target.closest('.toggle');
+  if (toggle) {
+    const chunk = toggle.closest('.chunk');
+    chunk.classList.toggle('open');
+    toggle.textContent = chunk.classList.contains('open') ? 'ocultar texto' : 'ver texto';
+    return;
+  }
+  const showret = e.target.closest('.showret');
+  if (showret) showRetrieval(Number(showret.dataset.idx));
+});
+
+fetch('/api/health').then(r => r.json()).then(h => {
+  document.getElementById('corpus').innerHTML =
+    h.corpus.map(c => `<span class="nom" title="${esc(c.title)}">${esc(c.short_id)}</span>`).join('');
+  document.getElementById('meta').textContent = h.generation_model;
+});
+
+document.getElementById('starters').innerHTML =
+  STARTERS.map(s => `<button type="button">${esc(s)}</button>`).join('');
+document.getElementById('starters').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b) send(b.textContent);
+});
+qEl.focus();
+</script>
+</body>
+</html>

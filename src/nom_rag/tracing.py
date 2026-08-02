@@ -28,6 +28,11 @@ class Trace:
     citations: list[str]
     usage: dict = field(default_factory=dict)  # {input_tokens, output_tokens}
     latency_ms: dict = field(default_factory=dict)  # {retrieve, generate, total}
+    # follow-up turns retrieve on a rewritten query; keeping both makes a bad
+    # rewrite visible in the trace instead of looking like a retrieval failure.
+    # Defaults keep traces written before this field readable.
+    retrieval_query: str = ""
+    rewritten: bool = False
 
 
 def new_trace_id() -> str:

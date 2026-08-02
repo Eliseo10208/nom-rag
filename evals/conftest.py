@@ -44,6 +44,14 @@ OUT_OF_SCOPE_CASES = [c for c in ALL_CASES if not c.retrievable]
 
 @pytest.fixture(scope="session")
 def retriever():
+    """Shared retriever for the session.
+
+    Note: Chroma's PersistentClient is SQLite-backed, so running this suite while
+    the API server (`uvicorn nom_rag.api:app`) is up against the same .chroma
+    directory can produce transient, non-reproducible retrieval failures. Stop
+    the server before running the evals. Retrieval itself is deterministic —
+    verified by repeating a query in-process and getting identical rankings.
+    """
     from nom_rag.config import settings
     from nom_rag.index.embed import Embedder
     from nom_rag.index.store import Retriever
