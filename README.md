@@ -212,7 +212,9 @@ pytest evals -m "not llm"    # harness + retrieval evals: no key needed
 
 # for generation: free key at https://aistudio.google.com/apikey
 cp .env.example .env         # put GEMINI_API_KEY there
+
 nom-rag ask "¿Quiénes integran la comisión de seguridad e higiene?"
+nom-rag chat                 # interactive; loads the model once (~800ms/answer)
 pytest evals -m llm          # generation + judge evals
 ```
 

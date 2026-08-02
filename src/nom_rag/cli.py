@@ -79,6 +79,67 @@ def ask(
 
 
 @app.command()
+def chat(k: int = typer.Option(None, help="Chunks a recuperar (default: config)")):
+    """Interactive session. Loads the embedding model and index once instead of
+    paying the ~10s startup on every question.
+
+    Each question is retrieved independently — there is no conversational
+    memory. That is deliberate: carrying history would add a code path the eval
+    suite does not cover, so the chat would stop reflecting the measured system.
+    """
+    from nom_rag.index.embed import Embedder
+    from nom_rag.index.store import Retriever
+    from nom_rag.llm.base import get_client
+    from nom_rag.pipeline import ask as ask_pipeline
+
+    console.print("[dim]Cargando modelo e índice...[/dim]")
+    retriever = Retriever(Embedder(settings.embedding_model))
+    client = get_client(settings.provider, settings.generation_model)
+
+    console.print(
+        f"\n[bold cyan]nom-rag[/bold cyan] · {settings.generation_model} · "
+        f"NOM-035, NOM-019, NOM-017, NOM-030\n"
+        "[dim]Escribe tu pregunta. /contexto muestra los extractos de la última "
+        "respuesta, /salir termina.[/dim]\n"
+    )
+
+    last: object | None = None
+    while True:
+        try:
+            question = console.input("[bold green]›[/bold green] ").strip()
+        except (EOFError, KeyboardInterrupt):
+            console.print("\n[dim]Hasta luego.[/dim]")
+            return
+
+        if not question:
+            continue
+        if question in ("/salir", "/exit", "/quit"):
+            console.print("[dim]Hasta luego.[/dim]")
+            return
+        if question == "/contexto":
+            if last is None:
+                console.print("[dim]Aún no hay una respuesta.[/dim]\n")
+                continue
+            for chunk in last.retrieved:  # type: ignore[attr-defined]
+                console.print(Panel(chunk.text[:1500], title=chunk.chunk_id, border_style="dim"))
+            continue
+
+        try:
+            result = ask_pipeline(question, retriever, client, k=k)
+        except Exception as exc:  # keep the session alive on quota/network errors
+            console.print(f"[red]Error:[/red] {exc}\n")
+            continue
+
+        last = result
+        console.print(Panel(result.answer, border_style="cyan"))
+        cited = ", ".join(result.citations) if result.citations else "sin citas"
+        console.print(
+            f"[dim]citas: {cited}  ·  {result.latency_ms['total']}ms  ·  "
+            f"trace={result.trace_id}[/dim]\n"
+        )
+
+
+@app.command()
 def trace(trace_id: str = typer.Argument(..., help="Trace id devuelto por ask")):
     """Pretty-print a stored trace."""
     from nom_rag.tracing import find_trace
