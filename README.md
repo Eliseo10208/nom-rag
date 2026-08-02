@@ -1,6 +1,6 @@
 # nom-rag — RAG over Mexican workplace-safety regulations, with an evaluation harness
 
-[![evals](https://github.com/eliseo10208/nom-rag/actions/workflows/evals.yml/badge.svg)](https://github.com/eliseo10208/nom-rag/actions/workflows/evals.yml)
+[![evals](https://github.com/Eliseo10208/nom-rag/actions/workflows/evals.yml/badge.svg)](https://github.com/Eliseo10208/nom-rag/actions/workflows/evals.yml)
 
 A question-answering system over four official Mexican safety standards (NOMs), built
 around the part most RAG demos skip: **a measurable definition of quality**. Every answer
