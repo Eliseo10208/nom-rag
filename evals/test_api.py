@@ -27,6 +27,13 @@ class _OpenSlots:
         self.released = True
 
 
+def test_favicon_reuses_assistant_cat_asset():
+    response = api.favicon()
+
+    assert response.path.name == "assistant-cat-cutout.png"
+    assert response.media_type == "image/png"
+
+
 def test_chat_returns_503_when_capacity_queue_times_out(monkeypatch):
     monkeypatch.setattr(api, "_chat_slots", _BusySlots())
     monkeypatch.setitem(api._state, "retriever", object())
