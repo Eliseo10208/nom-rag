@@ -15,22 +15,82 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from nom_rag.config import settings
+from nom_rag.corpus.sources import SOURCES
 from nom_rag.index.store import RetrievedChunk, Retriever
 from nom_rag.llm.base import LLMClient
 from nom_rag.tracing import Trace, new_trace_id, write_trace
 
 ABSTENTION_PHRASE = "No encuentro esa información en las normas indexadas"
 
+INDEXED_NOM_IDS = tuple(sorted(source.nom_id for source in SOURCES.values()))
+
+
+def _join_spanish(items: tuple[str, ...]) -> str:
+    if len(items) < 2:
+        return "".join(items)
+    return f"{', '.join(items[:-1])} y {items[-1]}"
+
+
+INDEXED_NOM_CATALOG = _join_spanish(INDEXED_NOM_IDS)
+OUT_OF_CORPUS_ANSWER = (
+    f"{ABSTENTION_PHRASE}. Actualmente puedo consultar únicamente "
+    f"{INDEXED_NOM_CATALOG}."
+)
+
+# Match both short identifiers (NOM-035) and qualified identifiers
+# (NOM-007-SSA2-1993), accepting the dash variants people commonly paste.
+_NOM_ID_RE = re.compile(
+    r"\bNOM\s*[-–—]?\s*\d{3}"
+    r"(?:\s*[-–—]\s*[A-Z][A-Z0-9]*)?"
+    r"(?:\s*[-–—]\s*\d{4})?\b",
+    re.IGNORECASE,
+)
+
+
+def extract_nom_ids(text: str) -> list[str]:
+    """Return normalized, deduplicated NOM identifiers mentioned in text."""
+    found: list[str] = []
+    for match in _NOM_ID_RE.findall(text):
+        normalized = re.sub(r"\s+", "", match.upper()).replace("–", "-").replace("—", "-")
+        normalized = re.sub(r"^NOM(?=\d)", "NOM-", normalized)
+        if normalized not in found:
+            found.append(normalized)
+    return found
+
+
+def unindexed_nom_ids(text: str) -> list[str]:
+    """Return explicit NOM identifiers that do not resolve to this corpus."""
+    short_ids = set(SOURCES)
+    full_ids = set(INDEXED_NOM_IDS)
+    missing: list[str] = []
+    for identifier in extract_nom_ids(text):
+        if identifier in short_ids or identifier in full_ids:
+            continue
+        # Agency-qualified identifiers without a year still resolve when their
+        # agency and number match a document in the corpus.
+        if identifier.count("-") == 2 and any(
+            full_id.startswith(f"{identifier}-") for full_id in full_ids
+        ):
+            continue
+        missing.append(identifier)
+    return missing
+
 SYSTEM_PROMPT = f"""Eres un asistente experto en Normas Oficiales Mexicanas (NOMs) de seguridad y \
 salud en el trabajo emitidas por la STPS. Respondes preguntas usando EXCLUSIVAMENTE \
 los extractos proporcionados como contexto.
+
+El corpus indexado contiene EXCLUSIVAMENTE estas normas:
+{chr(10).join(f"- {nom_id}" for nom_id in INDEXED_NOM_IDS)}
+Una NOM mencionada dentro de las referencias o la bibliografía de un extracto NO está
+indexada a menos que aparezca en la lista anterior.
 
 Reglas obligatorias:
 1. Cada afirmación debe llevar su cita con el numeral exacto entre corchetes, por \
 ejemplo [NOM-035 §5.1] o [NOM-019 §7.4]. Solo puedes citar numerales que aparezcan \
 en los extractos.
-2. Si los extractos no contienen la información necesaria, responde exactamente: \
-"{ABSTENTION_PHRASE}." y explica brevemente qué normas sí están indexadas. No inventes.
+2. Si los extractos no contienen la información necesaria, responde exactamente:
+"{OUT_OF_CORPUS_ANSWER}"
+No agregues otras normas ni intentes explicar una norma fuera del corpus.
 3. Si la pregunta parte de una premisa incorrecta, corrígela explícitamente citando \
 el numeral que la desmiente.
 4. Responde en español, directo y conciso (máximo ~150 palabras), sin preámbulos.
@@ -118,18 +178,36 @@ def ask(
     standalone first; the answer is still generated from the literal question."""
     t0 = time.perf_counter()
     query, rewritten = question, False
-    if history:
+    missing_ids = unindexed_nom_ids(question)
+    if history and not missing_ids:
         from nom_rag.conversation import rewrite_question
 
         query, rewritten = rewrite_question(question, history, client)
-    retrieved = retriever.query(query, k=k)
-    t1 = time.perf_counter()
-    response = client.complete(
-        build_prompt(question, retrieved, history), system=SYSTEM_PROMPT
-    )
-    t2 = time.perf_counter()
+        missing_ids = unindexed_nom_ids(query)
 
-    citations = extract_citations(response.text)
+    if missing_ids:
+        retrieved = []
+        answer = OUT_OF_CORPUS_ANSWER
+        model = "nom-rag-policy"
+        provider = "local"
+        usage = {"input_tokens": 0, "output_tokens": 0}
+        t1 = t2 = time.perf_counter()
+    else:
+        retrieved = retriever.query(query, k=k)
+        t1 = time.perf_counter()
+        response = client.complete(
+            build_prompt(question, retrieved, history), system=SYSTEM_PROMPT
+        )
+        t2 = time.perf_counter()
+        answer = response.text
+        model = response.model
+        provider = settings.provider
+        usage = {
+            "input_tokens": response.input_tokens,
+            "output_tokens": response.output_tokens,
+        }
+
+    citations = extract_citations(answer)
     latency = {
         "retrieve": round((t1 - t0) * 1000),
         "generate": round((t2 - t1) * 1000),
@@ -139,15 +217,12 @@ def ask(
         trace_id=new_trace_id(),
         ts=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         question=question,
-        provider=settings.provider,
-        model=response.model,
+        provider=provider,
+        model=model,
         retrieval=[{"chunk_id": c.chunk_id, "score": c.score} for c in retrieved],
-        answer=response.text,
+        answer=answer,
         citations=citations,
-        usage={
-            "input_tokens": response.input_tokens,
-            "output_tokens": response.output_tokens,
-        },
+        usage=usage,
         latency_ms=latency,
         retrieval_query=query,
         rewritten=rewritten,
@@ -155,12 +230,12 @@ def ask(
     if write:
         write_trace(trace)
     return AskResult(
-        answer=response.text,
+        answer=answer,
         retrieved=retrieved,
         citations=citations,
         trace_id=trace.trace_id,
-        model=response.model,
-        usage=trace.usage,
+        model=model,
+        usage=usage,
         latency_ms=latency,
         retrieval_query=query,
         rewritten=rewritten,
