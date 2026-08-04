@@ -1,7 +1,7 @@
 # Despliegue en una VPS con Docker
 
-Esta configuración está pensada para una VPS pequeña (1 vCPU, 4 GB RAM) y un
-grupo de hasta ocho usuarios de uso moderado. Ejecuta una sola instancia de
+Esta configuración está pensada para una demo pública de tráfico moderado en una
+VPS pequeña (1 vCPU, 4 GB RAM). Ejecuta una sola instancia de
 FastAPI, conserva Chroma y las trazas en volúmenes, y publica únicamente Caddy
 en los puertos 80/443.
 
@@ -11,7 +11,7 @@ en los puertos 80/443.
 Internet
    |
    v
-Caddy :80/:443  -- TLS + autenticación básica
+Caddy :80/:443  -- TLS + compresión
    |
    v
 FastAPI :8017   -- no se publica en el host
@@ -78,23 +78,13 @@ cp .env.vps.example .env
 chmod 600 .env
 ```
 
-Genera una contraseña larga para el grupo y conviértela a un hash aceptado por
-Caddy. El comando solicita la contraseña de forma interactiva:
-
-```bash
-docker run --rm -it caddy:2-alpine caddy hash-password
-```
-
 Edita `.env` y completa:
 
 - `GEMINI_API_KEY`: clave de Google AI Studio.
 - `NOMRAG_DOMAIN`: dominio público, por ejemplo `nom.example.com`.
-- `NOMRAG_AUTH_USER`: usuario compartido inicial.
-- `NOMRAG_AUTH_HASH`: resultado completo del comando anterior. Déjalo entre
-  comillas simples para que Compose no interprete los signos `$` del bcrypt.
 
-Nunca subas `.env` a Git ni envíes la contraseña, la clave de Gemini o llaves
-SSH privadas por chat.
+Nunca subas `.env` a Git ni envíes la clave de Gemini o llaves SSH privadas por
+chat.
 
 ## 3. Configurar DNS
 
@@ -126,11 +116,12 @@ Valida desde otra máquina:
 
 ```bash
 curl -I https://nom.example.com
-curl -u nomrag https://nom.example.com/api/health
+curl https://nom.example.com/api/health
 ```
 
-La primera llamada debe devolver `401` sin credenciales. La segunda debe
-devolver JSON con `"ok": true`.
+La segunda llamada debe devolver JSON con `"ok": true`. El chat es público;
+configura en Cloudflare una regla de limitación para solicitudes `POST` a
+`/api/chat` antes de compartir ampliamente el enlace.
 
 ## 5. Operación
 
@@ -185,9 +176,9 @@ falla. Copia esos archivos fuera de la VPS.
 - Logs de Docker rotados (tres archivos de 10 MB por servicio).
 - Root filesystem de solo lectura; únicamente `/tmp`, Chroma, trazas y los
   directorios internos de Caddy son escribibles.
-- Autenticación básica compartida para el grupo inicial. Si se necesitan
-  usuarios individuales, revocación por persona o roles, debe reemplazarse por
-  autenticación de aplicación.
+- Acceso público sin cuenta. El límite de concurrencia protege la memoria de la
+  VPS, pero la cuota del proveedor debe protegerse también con una regla de
+  frecuencia en Cloudflare.
 
 ## Solución rápida de problemas
 

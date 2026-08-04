@@ -54,8 +54,6 @@ services:
         restart: true
     environment:
       NOMRAG_DOMAIN: ${NOMRAG_DOMAIN:?Set NOMRAG_DOMAIN in .env}
-      NOMRAG_AUTH_USER: ${NOMRAG_AUTH_USER:?Set NOMRAG_AUTH_USER in .env}
-      NOMRAG_AUTH_HASH: ${NOMRAG_AUTH_HASH:?Set NOMRAG_AUTH_HASH in .env}
     ports:
       - "80:80"
       - "443:443"

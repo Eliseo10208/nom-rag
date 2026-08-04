@@ -1,8 +1,4 @@
 {$NOMRAG_DOMAIN} {
-	basic_auth {
-		{$NOMRAG_AUTH_USER} {$NOMRAG_AUTH_HASH}
-	}
-
 	encode zstd gzip
 	reverse_proxy app:8017
 

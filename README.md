@@ -261,8 +261,8 @@ requires re-spending quota on the *model*.
 
 The production path is a small Dockerized VPS: the image bakes in the local embedding
 model and a matching Chroma snapshot, while named volumes preserve the live index and
-audit traces. Caddy provides automatic HTTPS and basic authentication, and FastAPI runs
-as a single worker so the model is loaded only once. See [DEPLOY_VPS.md](DEPLOY_VPS.md)
+audit traces. Caddy provides automatic HTTPS, and FastAPI runs as a single worker so
+the model is loaded only once. See [DEPLOY_VPS.md](DEPLOY_VPS.md)
 for the complete Ubuntu, DNS, backup, update, and recovery procedure.
 
 ## Honest limitations
