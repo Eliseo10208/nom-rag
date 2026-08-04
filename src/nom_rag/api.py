@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from pathlib import Path
+from threading import BoundedSemaphore
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
@@ -28,6 +29,7 @@ from nom_rag.refs import chunk_covers
 WEB_DIR = Path(__file__).parent / "web"
 
 _state: dict = {}
+_chat_slots = BoundedSemaphore(settings.max_concurrent_queries)
 
 
 @asynccontextmanager
@@ -102,6 +104,12 @@ def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(503, "El índice todavía no termina de cargar.")
 
     history = [Turn(t.question, t.answer) for t in request.history]
+    acquired = _chat_slots.acquire(timeout=settings.query_wait_timeout_seconds)
+    if not acquired:
+        raise HTTPException(
+            503,
+            "Hay varias consultas en curso. Inténtalo nuevamente en un momento.",
+        )
     try:
         result = ask(
             request.question, _state["retriever"], _state["client"], history=history
@@ -109,6 +117,8 @@ def chat(request: ChatRequest) -> ChatResponse:
     except Exception as exc:
         # surface the provider's own message; quota errors are the common case
         raise HTTPException(502, f"El modelo no respondió: {exc}") from exc
+    finally:
+        _chat_slots.release()
 
     citations = []
     for ref in result.citations:

@@ -1,0 +1,83 @@
+name: nom-rag
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        EMBEDDING_MODEL: ${NOMRAG_EMBEDDING_MODEL:-intfloat/multilingual-e5-small}
+    image: nom-rag:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NOMRAG_DATA_DIR: /app/data
+      NOMRAG_CHROMA_DIR: /var/lib/nom-rag/chroma
+      NOMRAG_TRACES_DIR: /var/lib/nom-rag/traces
+      NOMRAG_MAX_CONCURRENT_QUERIES: ${NOMRAG_MAX_CONCURRENT_QUERIES:-2}
+      NOMRAG_QUERY_WAIT_TIMEOUT_SECONDS: ${NOMRAG_QUERY_WAIT_TIMEOUT_SECONDS:-60}
+    volumes:
+      - chroma-data:/var/lib/nom-rag/chroma
+      - traces-data:/var/lib/nom-rag/traces
+    expose:
+      - "8017"
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    mem_limit: 3g
+    mem_reservation: 2g
+    pids_limit: 256
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import json,urllib.request; data=json.load(urllib.request.urlopen('http://127.0.0.1:8017/api/health', timeout=5)); raise SystemExit(0 if data.get('ok') else 1)"
+      interval: 15s
+      timeout: 6s
+      retries: 5
+      start_period: 90s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+        restart: true
+    environment:
+      NOMRAG_DOMAIN: ${NOMRAG_DOMAIN:?Set NOMRAG_DOMAIN in .env}
+      NOMRAG_AUTH_USER: ${NOMRAG_AUTH_USER:?Set NOMRAG_AUTH_USER in .env}
+      NOMRAG_AUTH_HASH: ${NOMRAG_AUTH_HASH:?Set NOMRAG_AUTH_HASH in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /run:size=16m,mode=755
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  chroma-data:
+  traces-data:
+  caddy-data:
+  caddy-config:

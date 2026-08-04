@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     judge_model: str = "gemini-3.5-flash-lite"
     embedding_model: str = "intfloat/multilingual-e5-small"
     top_k: int = 5
+    # A single VPS process shares the loaded embedding model. Limit only the
+    # expensive chat pipeline; static files and health checks remain concurrent.
+    max_concurrent_queries: int = Field(2, ge=1, le=8)
+    query_wait_timeout_seconds: int = Field(60, ge=1, le=300)
 
     data_dir: Path = PROJECT_ROOT / "data"
     chroma_dir: Path = PROJECT_ROOT / ".chroma"

@@ -257,6 +257,14 @@ and re-running with the same `--tag` resumes instead of restarting. Deterministi
 can also be recomputed on past runs for free (see below), so a fix to a *checker* never
 requires re-spending quota on the *model*.
 
+## Deployment
+
+The production path is a small Dockerized VPS: the image bakes in the local embedding
+model and a matching Chroma snapshot, while named volumes preserve the live index and
+audit traces. Caddy provides automatic HTTPS and basic authentication, and FastAPI runs
+as a single worker so the model is loaded only once. See [DEPLOY_VPS.md](DEPLOY_VPS.md)
+for the complete Ubuntu, DNS, backup, update, and recovery procedure.
+
 ## Honest limitations
 
 - e5-**small** trades recall for CI speed; the two xfail cases document the cost.

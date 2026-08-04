@@ -1,0 +1,22 @@
+{$NOMRAG_DOMAIN} {
+	basic_auth {
+		{$NOMRAG_AUTH_USER} {$NOMRAG_AUTH_HASH}
+	}
+
+	encode zstd gzip
+	reverse_proxy app:8017
+
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
