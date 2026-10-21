@@ -79,6 +79,20 @@ and whether it was cited, and a banner shows the rewritten query whenever a foll
 reformulated. Clicking a citation in an older message restores *that* message's retrieval
 — pointing at the wrong evidence would defeat the purpose.
 
+### Social preview
+
+The initial HTML includes a description, canonical URL, Open Graph and Twitter
+metadata for `https://nom-rag.vercel.app/`. The shared cover is
+`src/nom_rag/web/nom-rag-social-2026-10-21.png` (1732 × 908), served through the
+existing `/static` mount and included by the package's `web/*.png` rule. It uses
+the app's cat mascot and contains no visible URL. The versioned filename gives
+future replacements a distinct image URL; sharing services may still cache page
+metadata until they fetch the page again.
+
+Run `python evals/test_social_preview.py` to check the metadata, image and
+packaging rules using only the Python standard library, without loading models
+or calling an LLM. These checks are also collected by the existing pytest suite.
+
 ## The evaluation harness
 
 ### Golden dataset
