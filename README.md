@@ -83,9 +83,10 @@ reformulated. Clicking a citation in an older message restores *that* message's 
 
 The initial HTML includes a description, canonical URL, Open Graph and Twitter
 metadata for `https://nom-rag.vercel.app/`. The shared cover is
-`src/nom_rag/web/nom-rag-social-2026-10-21.png` (1732 × 908), served through the
+`src/nom_rag/web/nom-rag-social-dark-v2-2026-10-21.png` (1732 × 908), served through the
 existing `/static` mount and included by the package's `web/*.png` rule. It uses
-the app's cat mascot and contains no visible URL. The versioned filename gives
+the app's dark charcoal palette and cat mascot, with no visible URL. The previous
+light cover remains available for existing image links. The versioned filename gives
 future replacements a distinct image URL; sharing services may still cache page
 metadata until they fetch the page again.
 

@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "src" / "nom_rag" / "web"
 SITE_URL = "https://nom-rag.vercel.app/"
-IMAGE_NAME = "nom-rag-social-2026-10-21.png"
+IMAGE_NAME = "nom-rag-social-dark-v2-2026-10-21.png"
 IMAGE_URL = SITE_URL + "static/" + IMAGE_NAME
 
 
