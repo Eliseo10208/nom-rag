@@ -259,11 +259,16 @@ requires re-spending quota on the *model*.
 
 ## Deployment
 
-The production path is a small Dockerized VPS: the image bakes in the local embedding
-model and a matching Chroma snapshot, while named volumes preserve the live index and
-audit traces. Caddy provides automatic HTTPS, and FastAPI runs as a single worker so
-the model is loaded only once. See [DEPLOY_VPS.md](DEPLOY_VPS.md)
-for the complete Ubuntu, DNS, backup, update, and recovery procedure.
+For a small portfolio demo, Vercel Hobby can build `Dockerfile.vercel` as a
+container-based Function. The image includes the local embedding model and a matching
+Chroma snapshot, accepts at most two active chat queries per instance, and scales to zero
+when idle. See [DEPLOY_VERCEL.md](DEPLOY_VERCEL.md) for secrets, verification, and domain
+setup.
+
+The always-on alternative is a small Dockerized VPS. Named volumes preserve the live
+index and audit traces, Caddy provides automatic HTTPS, and FastAPI runs as a single
+worker so the model is loaded only once. See [DEPLOY_VPS.md](DEPLOY_VPS.md) for the
+complete Ubuntu, DNS, backup, update, and recovery procedure.
 
 ## Honest limitations
 
