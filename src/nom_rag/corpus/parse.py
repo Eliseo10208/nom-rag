@@ -23,7 +23,7 @@ import unicodedata
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from selectolax.parser import HTMLParser
+from selectolax.lexbor import LexborHTMLParser as HTMLParser
 
 from nom_rag.config import settings
 from nom_rag.corpus.sources import SOURCES, NomSource

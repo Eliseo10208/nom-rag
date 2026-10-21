@@ -16,3 +16,6 @@ __pycache__/
 build/
 dist/
 .venv/
+
+.vercel
+.env*
