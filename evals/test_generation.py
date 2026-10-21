@@ -35,10 +35,10 @@ pytestmark = [
 GROUNDEDNESS_THRESHOLD = 0.90
 CORRECTNESS_THRESHOLD = 4.0
 CITATION_ACCURACY_THRESHOLD = 0.90
-# 4 of 5 out-of-scope questions abstain today; `o02-alturas` answers using a
-# hazard-taxonomy annex that merely mentions "Trabajos en Altura". Gating here
-# means a second out-of-scope leak fails CI.
-ABSTENTION_THRESHOLD = 0.75
+# The historical 4/5 run included the now-fixed `o02-alturas` guide leak.
+# Every out-of-scope case must abstain; an offline regression guards that
+# particular question even when the model-backed suite is not run.
+ABSTENTION_THRESHOLD = 1.0
 
 
 @pytest.fixture(scope="module")

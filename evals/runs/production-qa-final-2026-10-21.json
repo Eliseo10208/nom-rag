@@ -1,0 +1,426 @@
+{
+  "tag": "production-qa-final-2026-10-21",
+  "ts": "2026-10-21T08:11:24+00:00",
+  "config": {
+    "provider": "gemini",
+    "generation_model": "gemini-3.1-flash-lite",
+    "judge_model": "gemini-3.5-flash-lite",
+    "embedding_model": "intfloat/multilingual-e5-small",
+    "k": 5,
+    "n_chunks": 248
+  },
+  "retrieval": {
+    "k": 5,
+    "n_cases": 30,
+    "hit_rate": 1.0,
+    "recall": 0.897,
+    "mrr": 0.764,
+    "per_case": {
+      "f01-periodicidad-evaluacion": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.5,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:7.1",
+          "NOM-035:7.7",
+          "NOM-035:7.6",
+          "NOM-035:7.4",
+          "NOM-035:7.3"
+        ]
+      },
+      "f02-politica-prevencion": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:5.1",
+          "NOM-035:4.9",
+          "NOM-035:5.7",
+          "NOM-035:6.1",
+          "NOM-035:5.4"
+        ]
+      },
+      "f03-traumatico-canalizar": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.5,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:6.5",
+          "NOM-035:5.5",
+          "NOM-035:4.1",
+          "NOM-030:4.1",
+          "NOM-030:4.2"
+        ]
+      },
+      "f04-cuestionarios-propios": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.5,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:GR-III#3",
+          "NOM-035:7.5",
+          "NOM-035:GR-II#2",
+          "NOM-017:5.4",
+          "NOM-035:GR-III#4"
+        ]
+      },
+      "f05-tres-niveles": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:8.5",
+          "NOM-035:10.2#5",
+          "NOM-035:8.4",
+          "NOM-035:8.3",
+          "NOM-035:7.1"
+        ]
+      },
+      "f06-integracion-comision": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.2,
+        "missing": [],
+        "retrieved": [
+          "NOM-019:7.5",
+          "NOM-019:7.6",
+          "NOM-019:7.4",
+          "NOM-019:4.6",
+          "NOM-019:7.1"
+        ]
+      },
+      "f07-vigencia-nombramientos": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.5,
+        "missing": [],
+        "retrieved": [
+          "NOM-019:8.2",
+          "NOM-019:9.1",
+          "NOM-019:8.3",
+          "NOM-019:TRANS",
+          "NOM-019:7.5"
+        ]
+      },
+      "f08-programa-recorridos": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-019:9.3",
+          "NOM-019:8.3",
+          "NOM-019:9.5",
+          "NOM-019:9.4",
+          "NOM-019:5.4"
+        ]
+      },
+      "f09-verificaciones-extraordinarias": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-019:9.9",
+          "NOM-019:12.3#2",
+          "NOM-019:8.3",
+          "NOM-019:9.5",
+          "NOM-019:4.13"
+        ]
+      },
+      "f10-sustitucion-integrantes": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-019:9.13",
+          "NOM-019:7.5",
+          "NOM-019:7.6",
+          "NOM-019:8.3",
+          "NOM-019:1"
+        ]
+      },
+      "f11-epp-visitantes": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-017:5.5",
+          "NOM-017:5.2",
+          "NOM-017:4.2",
+          "NOM-017:5.3",
+          "NOM-017:AP-I#4"
+        ]
+      },
+      "f12-capacitacion-epp": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-017:5.9",
+          "NOM-017:AP-I#5",
+          "NOM-017:5.8",
+          "NOM-017:5.5",
+          "NOM-017:5.3"
+        ]
+      },
+      "f13-responsable-sst": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-030:4.1",
+          "NOM-030:3.11",
+          "NOM-030:4.2",
+          "NOM-030:5.7",
+          "NOM-030:9.2#1"
+        ]
+      },
+      "f14-conservar-docs": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-030:4.6",
+          "NOM-035:10.4",
+          "NOM-030:9.2#1",
+          "NOM-030:9.2#2",
+          "NOM-017:9.5"
+        ]
+      },
+      "f15-vigor-035": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:TRANS",
+          "NOM-035:2",
+          "NOM-035:10.2#6",
+          "NOM-035:3",
+          "NOM-030:TRANS"
+        ]
+      },
+      "f16-instrucciones-idioma": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-017:7.1#2",
+          "NOM-017:7.1#1",
+          "NOM-017:5.9",
+          "NOM-017:6.2",
+          "NOM-017:AP-I#4"
+        ]
+      },
+      "d01-traumatico-severo": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:4.1",
+          "NOM-035:GR-I",
+          "NOM-035:6.5",
+          "NOM-035:5.5",
+          "NOM-035:10.2#5"
+        ]
+      },
+      "d02-violencia-laboral": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.25,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:GR-IV#2",
+          "NOM-035:8.1",
+          "NOM-035:5.6",
+          "NOM-035:4.12",
+          "NOM-035:5.7"
+        ]
+      },
+      "d03-riesgo-grave": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-030:3.13",
+          "NOM-030:GR-I",
+          "NOM-030:3.12",
+          "NOM-030:GR-II#3",
+          "NOM-030:GR-II#2"
+        ]
+      },
+      "d04-servicios-preventivos": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-030:3.15",
+          "NOM-030:1",
+          "NOM-030:3.11",
+          "NOM-019:9.6",
+          "NOM-030:3.14"
+        ]
+      },
+      "m01-tamano-empresa-035": {
+        "hit": true,
+        "recall": 0.333,
+        "rr": 0.25,
+        "missing": [
+          "NOM-035:5.2",
+          "NOM-035:7.1"
+        ],
+        "retrieved": [
+          "NOM-035:GR-III#2",
+          "NOM-035:2",
+          "NOM-035:GR-II#2",
+          "NOM-035:5.3",
+          "NOM-035:5.8"
+        ]
+      },
+      "m02-035-integra-030": {
+        "hit": true,
+        "recall": 0.5,
+        "rr": 1.0,
+        "missing": [
+          "NOM-030:6.1"
+        ],
+        "retrieved": [
+          "NOM-035:7.6",
+          "NOM-035:7.1",
+          "NOM-035:10.2#3",
+          "NOM-035:7.7",
+          "NOM-035:7.4"
+        ]
+      },
+      "m03-comision-usa-diagnostico": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-019:9.6",
+          "NOM-030:4.5",
+          "NOM-030:9.2#2",
+          "NOM-019:5.4",
+          "NOM-030:6.1"
+        ]
+      },
+      "m04-periodicidades": {
+        "hit": true,
+        "recall": 0.25,
+        "rr": 1.0,
+        "missing": [
+          "NOM-017:5.9",
+          "NOM-030:4.4",
+          "NOM-035:7.9"
+        ],
+        "retrieved": [
+          "NOM-019:9.5",
+          "NOM-019:8.3",
+          "NOM-019:9.4",
+          "NOM-019:9.12",
+          "NOM-019:4.13"
+        ]
+      },
+      "p01-seis-meses": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.5,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:7.3",
+          "NOM-035:7.7",
+          "NOM-035:10.2#2",
+          "NOM-035:7.6",
+          "NOM-035:7.1"
+        ]
+      },
+      "p02-recorridos-mensuales": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-019:9.5",
+          "NOM-019:9.3",
+          "NOM-019:9.12",
+          "NOM-019:8.3",
+          "NOM-019:5.4"
+        ]
+      },
+      "p03-30-trabajadores": {
+        "hit": true,
+        "recall": 0.333,
+        "rr": 0.2,
+        "missing": [
+          "NOM-035:5.2",
+          "NOM-035:7.1"
+        ],
+        "retrieved": [
+          "NOM-035:7.3",
+          "NOM-035:10.2#3",
+          "NOM-035:10.2#2",
+          "NOM-035:10.2#6",
+          "NOM-035:5.3"
+        ]
+      },
+      "p04-preside-secretario": {
+        "hit": true,
+        "recall": 0.5,
+        "rr": 0.2,
+        "missing": [
+          "NOM-019:9.1"
+        ],
+        "retrieved": [
+          "NOM-019:6.2",
+          "NOM-019:5.3",
+          "NOM-019:7.2",
+          "NOM-019:TRANS",
+          "NOM-019:8.2"
+        ]
+      },
+      "p05-epp-cinco-anios": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 1.0,
+        "missing": [],
+        "retrieved": [
+          "NOM-017:5.9",
+          "NOM-017:5.5",
+          "NOM-017:5.12",
+          "NOM-017:5.4",
+          "NOM-017:AP-I#5"
+        ]
+      },
+      "r02-conservar-documentacion-nom030": {
+        "hit": true,
+        "recall": 1.0,
+        "rr": 0.333,
+        "missing": [],
+        "retrieved": [
+          "NOM-035:10.4",
+          "NOM-017:9.5",
+          "NOM-030:4.6",
+          "NOM-030:8.4",
+          "NOM-030:9.2#1"
+        ]
+      }
+    }
+  },
+  "generation": null
+}

@@ -20,11 +20,23 @@ def chunk_covers(short_id: str, numeral: str, text: str, ref: str) -> bool:
     if short_id != ref_nom or not ref_num:
         return False
     base = numeral.split("#")[0]
+    # Reference guides, appendices, and transitory provisions are separate
+    # units. Numbered list items inside a guide are not official clauses of
+    # the norm (e.g. GR-I contains a "4.2.1.6.1" hazard taxonomy entry).
+    if base.startswith(("GR-", "AP-")) or base == "TRANS":
+        return base == ref_num
     if base == ref_num:
         return True
     if base.startswith(f"{ref_num}."):  # section-level ref covered by its clauses
         return True
-    # clause folded into a larger chunk: its number opens a line in the text
+    # Only neighboring clauses in the same section can have been folded into
+    # this chunk. A conformity table in section 10 can mention "5.1" at the
+    # start of a row without actually containing clause 5.1.
+    numeric = r"\d{1,2}(?:\.\d{1,3})*"
+    if not (re.fullmatch(numeric, base) and re.fullmatch(numeric, ref_num)):
+        return False
+    if base.split(".")[0] != ref_num.split(".")[0]:
+        return False
     return re.search(rf"(?m)^{re.escape(ref_num)}\.?\s", text) is not None
 
 

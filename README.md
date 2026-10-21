@@ -44,21 +44,30 @@ citable chunks with `{nom_id, numeral, section_title}` metadata.
 ## Architecture
 
 ```
-question ──► e5-small embedding ──► ChromaDB (cosine, k=5) ──► prompt with citation
-                                                              contract ──► LLM ──► answer
-                                                                            │
-   traces/*.jsonl ◄── trace: retrieval scores, tokens, latencies ◄──────────┘
+question ──► e5-small ──► ChromaDB (2k candidates) ──► lexical rerank (k=5)
+              ──► normative evidence selection ──► LLM ──► citation guard ──► answer
+   traces/*.jsonl ◄── retrieval, exclusions, guard decisions, tokens, latencies
 ```
 
 - **Embeddings**: `intfloat/multilingual-e5-small`, local and free — retrieval evals run
   offline, in CI, on every push.
+- **Retrieval**: Chroma finds twice the requested number of dense candidates;
+  a small BM25-style lexical bonus reranks them before returning the best five.
+  This recovers short clauses whose exact wording is diluted in an embedding.
 - **LLM behind an interface** (`llm/base.py`): Gemini free tier by default — generation on
   `gemini-3.1-flash-lite`, judge on the newer `gemini-3.5-flash-lite`, so verdicts come
   from a **different and not-weaker model than the one being graded**. A Claude
   implementation ships ready (`NOMRAG_PROVIDER=anthropic`); a deterministic fake backs
   harness tests. Pipeline and judge only see the interface — swapping is a config change.
-- **Citation contract in the prompt**: every claim must cite `[NOM-035 §7.9]`; questions
-  outside the corpus must use a literal abstention phrase. Both are machine-checkable.
+- **Citation contract at runtime**: every substantive answer must cite a retrieved
+  clause such as `[NOM-035 §7.9]`. Missing, malformed, or unsupported citations
+  produce the literal abstention response; the original model output and rejection
+  reason remain in the local trace for debugging. This validates references,
+  not whether every sentence is semantically supported; the generation evals
+  check groundedness separately.
+- **Evidence selection** removes reference guides and non-normative appendices from
+  answers about requirements. An explicit question about a guide can still use it,
+  with a reminder that its examples are not binding requirements.
 - **Follow-up questions** are rewritten into standalone queries before retrieval —
   "¿y si tengo 30 empleados?" embeds to nothing on its own. The rewrite only replaces the
   *retrieval query*; the answer is still generated from the literal question, so a bad
@@ -74,7 +83,7 @@ uvicorn nom_rag.api:app --port 8017            # web chat at http://localhost:80
 ```
 
 The web UI is built around auditing rather than chatting: citations are chips that open
-the actual clause text, a side panel shows every retrieved chunk with its similarity score
+the actual clause text, a side panel shows every selected chunk with its hybrid search score
 and whether it was cited, and a banner shows the rewritten query whenever a follow-up was
 reformulated. Clicking a citation in an older message restores *that* message's retrieval
 — pointing at the wrong evidence would defeat the purpose.
@@ -117,10 +126,9 @@ re-chunking never invalidates the dataset. Bugs found in production become cases
 The judge only handles what needs comprehension. Citation validity and abstention are
 **parsed and verified mechanically** — no judge drift on the system's core contract.
 Judge verdicts are Pydantic-validated structured output with the reasoning field ordered
-before the label; a malformed verdict is an error, never a silently wrong metric. The
-harness itself has 12 unit tests running on fakes.
+before the label; a malformed verdict is an error, never a silently wrong metric.
 
-### Measured baseline
+### Historical baseline
 
 Retrieval (e5-small, k=5, 29 retrievable cases) — free, deterministic, gates every push:
 
@@ -138,11 +146,12 @@ Generation, run `baseline-gen` (34/34 cases, generation `gemini-3.1-flash-lite`,
 | groundedness | **1.00** | ≥ 0.90 | judge found no claim unsupported by the retrieved context |
 | correctness | **4.62 / 5** | ≥ 4.0 | vs. expert reference answers |
 | citation accuracy | **1.00** ¹ | ≥ 0.90 | every cited clause exists in the context (deterministic) |
-| abstention | **0.80** | ≥ 0.75 | 4 of 5 out-of-corpus questions correctly declined |
+| abstention | **0.80** | now ≥ 1.00 | 4 of 5 out-of-corpus questions declined in this historical run |
 
-The one abstention failure is analyzed below — it is a real defect, not rounding.
+The one abstention failure was a real defect, analyzed below. These numbers describe
+the earlier version; snapshots are kept unchanged as historical measurements.
 
-Follow-up rewriting (8 multi-turn cases): **7/8 = 0.875**, gate ≥ 0.75. The failure is
+Follow-up rewriting originally measured **7/8 = 0.875**. The failure was
 instructive and *not* a rewriter bug: the user says "fuera de programa" while the norm
 says "verificaciones extraordinarias", and e5-small does not bridge that vocabulary gap —
 confirmed by checking that the norm's own phrasing retrieves the clause fine. Chat was
@@ -153,6 +162,26 @@ have created exactly the untested path this repo argues against.
 time of the run*; `baseline-gen-rescored.json` holds the `1.00` produced by re-running the
 corrected checker over the same answers (story #2 below). Both files are kept — a run
 snapshot records what was actually measured, and is never edited after the fact.
+This citation accuracy metric only measures parsed citations on retrievable cases;
+it does not count a substantive answer without citations. The runtime guard now
+enforces that missing-citation case separately.
+
+### Production QA improvements (2026-10-21)
+
+Three questions from the deployed app became regressions: retaining NOM-030 documents,
+extraordinary commission checks in a follow-up, and requirements for work at heights.
+The retriever now combines dense and lexical ranking; retrieval queries include
+"verificaciones extraordinarias" when the user says "fuera de programa". A separate
+evidence step excludes non-normative guides from requirements answers, and the runtime
+guard rejects answers with missing or unsupported citations.
+
+The retrieval-only snapshot `production-qa-final-2026-10-21` covers 30 retrievable cases:
+**hit rate 1.000, recall 0.897, MRR 0.764**. The earlier `split-definitions`
+snapshot covered 29 cases: **0.931 / 0.842 / 0.722**. Both formerly missed cases
+(`f07`, `p04`) now retrieve their clauses; the new NOM-030 case also succeeds.
+All 101 offline tests passed. Focused Gemini checks returned §4.8 for document
+retention, §9.9 and the 30-day period for extraordinary checks, abstained on
+work-at-heights requirements, and still answered the EPP visitor case.
 
 ### A change is only real if the evals say so
 
@@ -198,16 +227,14 @@ Reverted; the code carries no unmeasured complexity.
 Two accepted, two reverted. That ratio is the point: without the harness, changes 3 and 4
 both *sound* right and would have shipped.
 
-Two known-weak retrieval cases (`f07`, `p04`: commission role/tenure questions whose
-clauses rank just outside k=5) are tracked as `xfail`, not hidden. `f07` is also the
-lowest-scoring generation case (correctness 1/5) — a retrieval miss propagating into a
-wrong answer, correctly attributed to its actual cause. Candidate levers: e5-base, a
-reranker, or k=6 — each is one `compare_runs.py` away from being justified with numbers.
+The earlier `f07` and `p04` retrieval misses are now passing cases in the suite.
+The historical `f07` generation score remains in its original snapshot; a new full
+generation-and-judge run has not yet replaced that historical measurement.
 
-### The most interesting failure: grounded but not responsive
+### A failure that groundedness did not catch
 
 `o02-alturas` asks what the norms require for work at heights — regulated by NOM-009,
-which is *not* in the corpus. The system answers anyway, citing `4.2.1.6.1` (anchor
+which is *not* in the corpus. The historical system answered anyway, citing `4.2.1.6.1` (anchor
 point), `4.2.1.6.2` (scaffolding), and so on. Those numbers are **real**: they come from
 NOM-019's Reference Guide I, a taxonomy of hazardous conditions used for accident
 investigation, which happens to contain a "Trabajos en Altura" heading.
@@ -216,8 +243,10 @@ So the answer is perfectly grounded — a groundedness judge scores it 1.0 — a
 wrong, because a classification annex is not a set of requirements. This is precisely why
 abstention is measured **separately and deterministically** rather than folded into a
 single quality score: no amount of groundedness catches an answer that is faithful to
-retrieved text that should never have been used. Two attempted fixes (README §3 and §4
-above) failed to move it; it stands as a documented open defect.
+retrieved text that should never have been used. The current evidence step filters that
+non-normative guide and recognizes that the remaining NOM-017 mention refers to other
+applicable standards. The exact question now abstains before calling the model, covered
+by an offline end-to-end regression and a local production-model check.
 
 ### Traces
 
@@ -287,7 +316,8 @@ complete Ubuntu, DNS, backup, update, and recovery procedure.
 
 ## Honest limitations
 
-- e5-**small** trades recall for CI speed; the two xfail cases document the cost.
+- e5-**small** trades recall for CI speed; the retrieval snapshot and per-case
+  checks make missed clauses visible as the corpus and question set grow.
 - The judge is calibrated by rubric design and structured output, not yet meta-evaluated
   against human labels (natural next step: label ~20 answers, measure judge agreement).
 - Model choice is constrained by free-tier quota, not by what would score best: the

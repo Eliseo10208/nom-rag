@@ -127,12 +127,16 @@ def chat(request: ChatRequest) -> ChatResponse:
             (c for c in result.retrieved if chunk_covers(c.short_id, c.numeral, c.text, ref)),
             None,
         )
+        if source is None:
+            # Defense in depth if another ask() implementation bypasses the
+            # runtime guard: never publish a citation with an empty source.
+            raise HTTPException(502, "La respuesta no pasó la verificación de citas.")
         citations.append(
             Citation(
                 ref=ref,
                 nom=nom,
                 numeral=numeral,
-                text=source.text if source else "",
+                text=source.text,
             )
         )
 

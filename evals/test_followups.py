@@ -14,7 +14,12 @@ from pathlib import Path
 import pytest
 
 from nom_rag.config import settings
-from nom_rag.conversation import Turn, format_history, rewrite_question
+from nom_rag.conversation import (
+    Turn,
+    expand_retrieval_terms,
+    format_history,
+    rewrite_question,
+)
 from nom_rag.llm.fake import FakeLLM
 from nom_rag.refs import covered_refs
 
@@ -32,14 +37,6 @@ FOLLOWUPS = load_followups()
 # Measured 0.875 (7/8). The gate allows one more failure before tripping.
 HIT_RATE_THRESHOLD = 0.75
 
-# `s04` is retrieval-bound, not rewrite-bound: the user says "fuera de programa"
-# while the norm says "verificaciones extraordinarias", and e5-small does not
-# bridge that vocabulary gap. Diagnosed by checking that the golden phrasing of
-# the same clause retrieves fine. Tracked, not hidden — same as the xfail cases
-# in test_retrieval.py.
-KNOWN_VOCABULARY_GAP = {"s04-extraordinarios"}
-
-
 # ------------------------------------------------------- offline (no network)
 
 
@@ -50,6 +47,35 @@ def test_first_turn_never_calls_the_llm():
     assert query == "¿Qué es la NOM-035?"
     assert rewritten is False
     assert fake.calls == [], "llamó al LLM sin historial"
+
+
+def test_first_turn_can_expand_off_schedule_verifications_without_an_llm(retriever):
+    question = "¿Cuándo se hacen los recorridos de verificación fuera de programa?"
+    fake = FakeLLM()
+    query, rewritten = rewrite_question(question, [], fake)
+    assert query == question and rewritten is False and fake.calls == []
+
+    expanded = expand_retrieval_terms(query)
+    assert "verificaciones extraordinarias" in expanded
+    assert expand_retrieval_terms(expanded) == expanded
+    assert covered_refs(["NOM-019:9.9"], retriever.query(expanded)) == {"NOM-019:9.9"}
+    assert expand_retrieval_terms("¿Cuándo se actualiza el programa de la NOM-030?") == (
+        "¿Cuándo se actualiza el programa de la NOM-030?"
+    )
+
+
+def test_ask_expands_first_turn_and_retrieves_extraordinary_verifications(retriever):
+    from nom_rag.pipeline import ask
+
+    question = "¿Cuándo se hacen los recorridos de verificación fuera de programa?"
+    fake = FakeLLM(default="Se realizan en casos extraordinarios. [NOM-019 §9.9]")
+    result = ask(question, retriever, fake, write=False, history=[])
+
+    assert "verificaciones extraordinarias" in result.retrieval_query
+    assert result.rewritten is True
+    assert covered_refs(["NOM-019:9.9"], result.retrieved) == {"NOM-019:9.9"}
+    assert result.citations == ["NOM-019:9.9"]
+    assert len(fake.calls) == 1, "first turn should only call the LLM for generation"
 
 
 def test_rewrite_uses_structured_output():
@@ -100,6 +126,29 @@ def test_single_turn_prompt_is_unchanged_by_the_chat_feature():
     chunks = [_Chunk()]
     assert build_prompt("¿P?", chunks) == build_prompt("¿P?", chunks, history=None)
     assert build_prompt("¿P?", chunks) == build_prompt("¿P?", chunks, history=[])
+
+
+def test_off_schedule_followup_recovers_extraordinary_verifications(retriever):
+    case = next(c for c in FOLLOWUPS if c["id"] == "s04-extraordinarios")
+    assert case["question"] == "¿cuándo hay que hacerlos fuera de programa?"
+    history = [Turn(t["question"], t["answer"]) for t in case["history"]]
+    fake = FakeLLM(
+        responses=[
+            json.dumps(
+                {
+                    "needs_rewrite": True,
+                    "standalone_question": (
+                        "¿Cuándo hay que hacer recorridos de verificación "
+                        "de la comisión fuera de programa?"
+                    ),
+                }
+            )
+        ]
+    )
+    query, rewritten = rewrite_question(case["question"], history, fake)
+    assert rewritten is True
+    assert "verificaciones extraordinarias" in query
+    assert covered_refs(case["expected_refs"], retriever.query(query)) == {"NOM-019:9.9"}
 
 
 def test_dataset_is_wellformed():
