@@ -45,6 +45,15 @@ def test_chunk_covers_clause_folded_into_bigger_chunk():
     assert not chunk_covers("NOM-035", "7.7", text, "NOM-035:7.10")
 
 
+def test_conformity_table_row_is_not_a_folded_clause():
+    table = "10.2 Procedimiento de evaluación\n5.1\nDocumental\nEvidencia de cumplimiento"
+    assert not chunk_covers("NOM-035", "10.2#1", table, "NOM-035:5.1")
+    assert chunk_covers(
+        "NOM-030", "4.6", "4.6 Reportes\n4.8 Conservar documentación dos años",
+        "NOM-030:4.8",
+    )
+
+
 def test_chunk_covers_section_level_reference():
     assert chunk_covers("NOM-019", "9.1", "", "NOM-019:9")
 

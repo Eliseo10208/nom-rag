@@ -16,8 +16,10 @@ from datetime import datetime, timezone
 
 from nom_rag.config import settings
 from nom_rag.corpus.sources import SOURCES
+from nom_rag.evidence import select_evidence
 from nom_rag.index.store import RetrievedChunk, Retriever
 from nom_rag.llm.base import LLMClient
+from nom_rag.refs import covered_refs
 from nom_rag.tracing import Trace, new_trace_id, write_trace
 
 ABSTENTION_PHRASE = "No encuentro esa información en las normas indexadas"
@@ -96,12 +98,21 @@ el numeral que la desmiente.
 4. Responde en español, directo y conciso (máximo ~150 palabras), sin preámbulos.
 """
 
-# Capture the whole reference body and normalize it, rather than assuming a
-# shape: models legitimately cite an inciso ("[NOM-035 §7.5 a)]", "§8.5.a"),
-# and a checker that reads that as a clause named "7.5a" marks a CORRECT
-# citation invalid. Incisos live inside their parent clause, which is the
-# granularity the corpus is chunked and cited at, so they normalize to it.
-CITATION_RE = re.compile(r"\[(NOM-\d{3})\s*§?\s*([^\]]{1,40})\]")
+# A single bracket can contain several clause citations, sometimes repeating
+# the NOM and sometimes inheriting it: "[NOM-035 §7.9; NOM-019 §9.6]" or
+# "[NOM-035 §7.5, §7.6]". Parse every clause rather than only the first one.
+_CITATION_LIKE_RE = re.compile(
+    r"\[\s*(?:NOM\b|§\s*\d{1,2}(?:\.\d{1,3})+|\d{1,2}(?:\.\d{1,3})+)"
+    r"[^\]]*\]",
+    re.IGNORECASE,
+)
+_REF_TOKEN_RE = re.compile(
+    r"(?:(?P<nom>NOM-\d{3})\s*§?\s*|(?P<inherited>§)\s*)"
+    r"(?P<numeral>TRANS|GR-[IVXLC]+|AP-[A-Z0-9]+|\d{1,2}(?:\.\d{1,3})*)",
+    re.IGNORECASE,
+)
+_NOM_MENTION_RE = re.compile(r"\bNOM\s*[-–—]?\s*\d{3}\b", re.IGNORECASE)
+_UNPARSED_NUMERAL_RE = re.compile(r"[,;]\s*\d{1,2}(?:\.\d{1,3})*\b")
 
 _SYMBOLIC_RE = re.compile(r"^(TRANS|GR-[IVXLC]+|AP-[A-Z0-9]+)", re.IGNORECASE)
 _NUMERIC_RE = re.compile(r"^(\d{1,2}(?:\.\d{1,3})*)")
@@ -116,6 +127,38 @@ def normalize_numeral(raw: str) -> str | None:
     if match := _NUMERIC_RE.match(ref):
         return match.group(1)
     return None
+
+
+def _parse_citation_marker(marker: str) -> list[str] | None:
+    """Parse every reference in one bracket, or reject an ambiguous marker."""
+    body = marker[1:-1]
+    tokens = list(_REF_TOKEN_RE.finditer(body))
+    if not tokens:
+        return None
+    # A reference-shaped token that our grammar did not consume cannot be
+    # silently ignored: it may be a second, unsupported citation.
+    if len(_NOM_MENTION_RE.findall(body)) != sum(bool(t.group("nom")) for t in tokens):
+        return None
+    if body.count("§") != sum("§" in token.group() for token in tokens):
+        return None
+    remainder = body
+    for token in reversed(tokens):
+        remainder = remainder[: token.start()] + " " * len(token.group()) + remainder[token.end() :]
+    if _UNPARSED_NUMERAL_RE.search(remainder):
+        return None
+
+    refs: list[str] = []
+    current_nom: str | None = None
+    for token in tokens:
+        if token.group("nom"):
+            current_nom = token.group("nom").upper()
+        if current_nom is None:
+            return None
+        numeral = normalize_numeral(token.group("numeral"))
+        if numeral is None:
+            return None
+        refs.append(f"{current_nom}:{numeral}")
+    return refs
 
 
 @dataclass
@@ -136,14 +179,44 @@ def extract_citations(answer: str) -> list[str]:
     incisos of one clause collapse to a single citation — they are one claim
     about one clause, not five."""
     seen: list[str] = []
-    for nom, raw in CITATION_RE.findall(answer):
-        numeral = normalize_numeral(raw)
-        if numeral is None:
+    for marker in _CITATION_LIKE_RE.finditer(answer):
+        refs = _parse_citation_marker(marker.group())
+        if refs is None:
             continue
-        ref = f"{nom}:{numeral}"
-        if ref not in seen:
-            seen.append(ref)
+        for ref in refs:
+            if ref not in seen:
+                seen.append(ref)
     return seen
+
+
+def enforce_citation_contract(
+    answer: str, retrieved: list[RetrievedChunk]
+) -> tuple[str, list[str], str, list[str]]:
+    """Return a safe answer, its supported refs, rejection reason and bad refs.
+
+    A model can ignore the prompt and cite a clause it never saw, or answer
+    without a parseable citation. In either case the exact abstention response
+    is safer than showing an unsupported claim. The raw output is kept only in
+    the trace for diagnosis.
+    """
+    if ABSTENTION_PHRASE.casefold() in answer.casefold():
+        reason = "" if answer.strip() == OUT_OF_CORPUS_ANSWER else "normalized_abstention"
+        return OUT_OF_CORPUS_ANSWER, [], reason, []
+
+    for marker in _CITATION_LIKE_RE.finditer(answer):
+        if _parse_citation_marker(marker.group()) is None:
+            return OUT_OF_CORPUS_ANSWER, [], "unparseable_citation", []
+
+    citations = extract_citations(answer)
+    if not citations:
+        return OUT_OF_CORPUS_ANSWER, [], "missing_citation", []
+
+    covered = covered_refs(citations, retrieved)
+    invalid = [ref for ref in citations if ref not in covered]
+    if invalid:
+        return OUT_OF_CORPUS_ANSWER, [], "unsupported_citation", invalid
+
+    return answer, citations, "", []
 
 
 def build_prompt(
@@ -178,6 +251,10 @@ def ask(
     standalone first; the answer is still generated from the literal question."""
     t0 = time.perf_counter()
     query, rewritten = question, False
+    guard_reason = ""
+    rejected_answer = ""
+    guard_invalid_refs: list[str] = []
+    excluded_retrieval: list[dict] = []
     missing_ids = unindexed_nom_ids(question)
     if history and not missing_ids:
         from nom_rag.conversation import rewrite_question
@@ -185,29 +262,60 @@ def ask(
         query, rewritten = rewrite_question(question, history, client)
         missing_ids = unindexed_nom_ids(query)
 
+    if not missing_ids:
+        from nom_rag.conversation import expand_retrieval_terms
+
+        expanded_query = expand_retrieval_terms(query)
+        rewritten = rewritten or expanded_query != query
+        query = expanded_query
+
     if missing_ids:
         retrieved = []
         answer = OUT_OF_CORPUS_ANSWER
         model = "nom-rag-policy"
         provider = "local"
         usage = {"input_tokens": 0, "output_tokens": 0}
+        citations: list[str] = []
         t1 = t2 = time.perf_counter()
     else:
-        retrieved = retriever.query(query, k=k)
+        candidates = retriever.query(query, k=k)
+        evidence = select_evidence(query, candidates)
+        retrieved = evidence.selected
+        excluded_retrieval = [
+            {"chunk_id": chunk.chunk_id, "score": chunk.score}
+            for chunk in evidence.excluded
+        ]
         t1 = time.perf_counter()
-        response = client.complete(
-            build_prompt(question, retrieved, history), system=SYSTEM_PROMPT
-        )
-        t2 = time.perf_counter()
-        answer = response.text
-        model = response.model
-        provider = settings.provider
-        usage = {
-            "input_tokens": response.input_tokens,
-            "output_tokens": response.output_tokens,
-        }
+        if evidence.should_abstain or not retrieved:
+            answer = OUT_OF_CORPUS_ANSWER
+            citations = []
+            guard_reason = (
+                "referral_only_evidence" if evidence.should_abstain else "no_normative_evidence"
+            )
+            model = "nom-rag-policy"
+            provider = "local"
+            usage = {"input_tokens": 0, "output_tokens": 0}
+            t2 = t1
+        else:
+            system = SYSTEM_PROMPT
+            if evidence.instruction:
+                system += "\n" + evidence.instruction
+            response = client.complete(
+                build_prompt(question, retrieved, history), system=system
+            )
+            t2 = time.perf_counter()
+            answer, citations, guard_reason, guard_invalid_refs = enforce_citation_contract(
+                response.text, retrieved
+            )
+            if guard_reason:
+                rejected_answer = response.text
+            model = response.model
+            provider = settings.provider
+            usage = {
+                "input_tokens": response.input_tokens,
+                "output_tokens": response.output_tokens,
+            }
 
-    citations = extract_citations(answer)
     latency = {
         "retrieve": round((t1 - t0) * 1000),
         "generate": round((t2 - t1) * 1000),
@@ -226,6 +334,10 @@ def ask(
         latency_ms=latency,
         retrieval_query=query,
         rewritten=rewritten,
+        guard_reason=guard_reason,
+        guard_invalid_refs=guard_invalid_refs,
+        rejected_answer=rejected_answer,
+        excluded_retrieval=excluded_retrieval,
     )
     if write:
         write_trace(trace)

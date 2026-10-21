@@ -65,13 +65,14 @@ def test_unindexed_nom_returns_canonical_answer_without_retrieval_or_generation(
     assert client.calls == []
 
 
-def test_indexed_nom_still_uses_retrieval_and_generation():
+def test_indexed_nom_without_evidence_abstains_without_generation():
     retriever = _RecordingRetriever()
     client = FakeLLM(default="Está indexada.")
 
     result = ask("¿Qué dice la NOM-017?", retriever, client, write=False)
 
-    assert result.answer == "Está indexada."
+    assert result.answer == OUT_OF_CORPUS_ANSWER
+    assert result.citations == []
     assert retriever.calls == [("¿Qué dice la NOM-017?", None)]
-    assert len(client.calls) == 1
-    assert client.calls[0]["system"] == SYSTEM_PROMPT
+    assert client.calls == []
+    assert result.model == "nom-rag-policy"

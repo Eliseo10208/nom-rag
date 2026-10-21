@@ -33,6 +33,13 @@ class Trace:
     # Defaults keep traces written before this field readable.
     retrieval_query: str = ""
     rewritten: bool = False
+    # The public answer remains the safe final answer. When the citation guard
+    # changes a model response, preserve the reason and original model output
+    # for debugging without changing older trace records or the API schema.
+    guard_reason: str = ""
+    guard_invalid_refs: list[str] = field(default_factory=list)
+    rejected_answer: str = ""
+    excluded_retrieval: list[dict] = field(default_factory=list)
 
 
 def new_trace_id() -> str:

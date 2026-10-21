@@ -403,13 +403,46 @@ const scrollDown = () => convEl.scrollTo({ top: convEl.scrollHeight });
 // "[NOM-035 §7.9]" becomes a reference that opens the clause it points at.
 // The turn index travels with it: a citation in an older answer must show THAT
 // answer's evidence, not whatever the panel happens to display.
+function citationRef(nom, rawNumeral) {
+  const numeral = rawNumeral.trim().replace(/[.,;:]+$/, '').split('#')[0].trim();
+  const symbolic = numeral.match(/^(TRANS|GR-[IVXLC]+|AP-[A-Z0-9]+)/i);
+  const numeric = numeral.match(/^(\d{1,2}(?:\.\d{1,3})*)/);
+  return `${nom.toUpperCase()}:${symbolic ? symbolic[1].toUpperCase() : numeric ? numeric[1] : numeral}`;
+}
+
+function citationSourceChunkId(data, ref) {
+  const citation = data?.citations.find(c => c.ref === ref);
+  if (!citation) return null;
+  return data.retrieved.find(c =>
+    c.chunk_id.startsWith(`${citation.nom}:`) && c.text === citation.text
+  )?.chunk_id || null;
+}
+
+function renderCitationMarker(body, idx) {
+  // The API can approve several clauses in one bracket. Keep their separators,
+  // but give each clause its own link to its exact retrieved source.
+  const tokens = [...body.matchAll(/(?:(NOM-\d{3})\s*§?\s*|(§)\s*)(TRANS|GR-[IVXLC]+|AP-[A-Z0-9]+|\d{1,2}(?:\.\d{1,3})*)/gi)];
+  if (!tokens.length) return `[${body}]`;
+  let nom = null;
+  let cursor = 0;
+  let rendered = '';
+  for (const token of tokens) {
+    rendered += body.slice(cursor, token.index);
+    nom = token[1]?.toUpperCase() || nom;
+    if (!nom) return `[${body}]`;
+    const numeral = token[3];
+    rendered += `<button class="cite" data-idx="${idx}" data-ref="${esc(citationRef(nom, numeral))}" title="Ver el texto de la cláusula">${nom} §${numeral}</button>`;
+    cursor = token.index + token[0].length;
+  }
+  return rendered + body.slice(cursor);
+}
+
 function renderAnswer(text, idx) {
   return esc(text)
     // NOTE: this markup must stay on one line. Paragraph splitting below turns
     // remaining newlines into <br>, which would land inside the tag and print
     // the attributes as text.
-    .replace(/\[(NOM-\d{3})\s*§\s*([^\]]{1,40})\]/g,
-      (_, nom, num) => `<button class="cite" data-idx="${idx}" data-ref="${nom}:${num.trim()}" title="Ver el texto de la cláusula">${nom} §${num.trim()}</button>`)
+    .replace(/\[([^\]\n]+)\]/g, (_, body) => renderCitationMarker(body, idx))
     .split(/\n{2,}/)
     .map(block => {
       const lines = block.split('\n');
@@ -486,7 +519,7 @@ async function send(question) {
     history.push({ question, answer: data.answer });
 
     const note = data.rewritten
-      ? `<div class="flagnote"><b>Búsqueda reformulada</b> con el contexto de la conversación:
+      ? `<div class="flagnote"><b>Consulta de búsqueda reformulada</b>:
          <q>${esc(data.retrieval_query)}</q></div>` : '';
     pending.innerHTML = `<div class="assistant-row">
       <img class="assistant-avatar" src="/static/assistant-cat-cutout.png" alt="" />
@@ -556,21 +589,19 @@ document.getElementById('drawer').addEventListener('click', e => {
 document.addEventListener('click', e => {
   const cite = e.target.closest('.cite');
   if (cite) {
-    showRetrieval(Number(cite.dataset.idx));
-    const [nom, numeral] = cite.dataset.ref.split(':');
+    const idx = Number(cite.dataset.idx);
+    showRetrieval(idx);
+    const chunkId = citationSourceChunkId(turnData[idx], cite.dataset.ref);
     const all = [...chunksEl.querySelectorAll('.chunk')];
-    // a cited clause can live inside a chunk numbered differently (§7.9 sits in
-    // chunk NOM-035:7.7), so fall back to what the API flagged as cited
-    const target =
-      all.find(c => c.dataset.chunk === `${nom}:${numeral}`) ||
-      all.find(c => c.dataset.chunk.startsWith(`${nom}:${numeral}`)) ||
-      all.find(c => c.classList.contains('cited') && c.dataset.chunk.startsWith(nom));
+    // The API resolves each official citation to the exact retrieved chunk.
+    // Matching its text also works when §4.8 lives inside chunk NOM-030:4.6.
+    const target = all.find(c => c.dataset.chunk === chunkId);
+    inspector.classList.add('open');
+    document.getElementById('drawer').setAttribute('aria-expanded', 'true');
     if (target) {
       target.classList.add('open');
       const more = target.querySelector('.chunk-more');
       if (more) more.textContent = 'Ocultar texto';
-      inspector.classList.add('open');
-      document.getElementById('drawer').setAttribute('aria-expanded', 'true');
       target.scrollIntoView({ block: 'nearest' });
     }
     return;

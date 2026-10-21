@@ -23,11 +23,6 @@ HIT_RATE_THRESHOLD = 0.90
 RECALL_THRESHOLD = 0.80
 MRR_THRESHOLD = 0.68
 
-# cases whose expected clauses rank just outside k=5 with e5-small; tracked,
-# not gating. Candidate levers: stronger embedder (e5-base), reranker, k=6.
-KNOWN_WEAK = {"f07-vigencia-nombramientos", "p04-preside-secretario"}
-
-
 def _case_metrics(case, retrieved) -> dict:
     covered = covered_refs(case.expected_refs, retrieved)
     first_rank = None
@@ -71,14 +66,18 @@ def test_mrr(retrieval_results):
     assert mrr >= MRR_THRESHOLD, f"MRR={mrr:.3f}"
 
 
+def test_document_retention_clause_is_retrieved_for_the_actual_question(retriever):
+    question = "¿Cuánto tiempo debo conservar la documentación de la NOM-030?"
+    retrieved = retriever.query(question)
+    # §4.8 is a short obligation folded into the chunk headed §4.6.
+    assert covered_refs(["NOM-030:4.8"], retrieved) == {"NOM-030:4.8"}
+
+
 @pytest.mark.parametrize("case", RETRIEVABLE_CASES, ids=lambda c: c.id)
-def test_case_diagnostics(case, retrieval_results, request):
-    """Non-gating per-case visibility: fails only if the case retrieves NOTHING
-    relevant, which almost always means the golden ref or the chunker broke."""
+def test_case_diagnostics(case, retrieval_results):
+    """Every known retrievable case must include a relevant clause in top-k."""
     metrics = _case_metrics(case, retrieval_results.by_case[case.id])
     if not metrics["hit"]:
         retrieved_ids = [c.chunk_id for c in retrieval_results.by_case[case.id]]
         message = f"{case.id}: none of {case.expected_refs} retrieved; got {retrieved_ids}"
-        if case.id in KNOWN_WEAK:
-            pytest.xfail(f"known-weak: {message}")
         pytest.fail(message)

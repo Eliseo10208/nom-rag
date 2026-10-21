@@ -13,6 +13,8 @@ Two properties keep the cost and the blast radius small:
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from dataclasses import dataclass
 
 from pydantic import BaseModel, Field
@@ -48,8 +50,39 @@ Reglas:
 por el sujeto explícito que aparece en el historial.
 - Conserva la intención y los datos concretos de la pregunta original (cifras, plazos).
 - Si la pregunta ya se entiende sola, devuélvela sin cambios y marca needs_rewrite=false.
+- Si se trata de recorridos de verificación fuera de programa, incluye también el
+  término normativo "verificaciones extraordinarias" en la pregunta autónoma.
 - NO respondas la pregunta. NO agregues información que el usuario no pidió.
 - Responde en español."""
+
+
+def expand_retrieval_terms(question: str) -> str:
+    """Bridge colloquial off-schedule wording to the NOM's search vocabulary.
+
+    This is deterministic and safe to use on a first turn without an LLM call.
+    """
+    folded = "".join(
+        char
+        for char in unicodedata.normalize("NFD", question.casefold())
+        if not unicodedata.combining(char)
+    )
+    off_schedule = re.search(
+        r"\b(?:fuera\s+de(?:l)?\s+programa(?:\s+anual)?|no\s+programad[aos]+)\b",
+        folded,
+    )
+    verification = re.search(r"\b(?:recorrid\w*|verificac\w*)\b", folded)
+    if off_schedule and verification and "extraordinari" not in folded:
+        phrase = re.search(
+            r"\b(?:fuera\s+de(?:l)?\s+programa(?:\s+anual)?|no\s+programad[ao]s?)\b",
+            question,
+            flags=re.IGNORECASE,
+        )
+        if phrase:
+            before = question[: phrase.start()].rstrip()
+            after = question[phrase.end() :]
+            prefix = f"{before}, es decir " if before else ""
+            return f"{prefix}verificaciones extraordinarias{after}"
+    return question
 
 
 def format_history(history: list[Turn], max_turns: int = MAX_HISTORY_TURNS) -> str:
@@ -78,6 +111,6 @@ def rewrite_question(
     )
     result = RewrittenQuery.model_validate_json(response.text)
     rewritten = result.standalone_question.strip()
-    if not result.needs_rewrite or not rewritten:
-        return question, False
-    return rewritten, rewritten != question
+    query = rewritten if result.needs_rewrite and rewritten else question
+    query = expand_retrieval_terms(query)
+    return query, query != question

@@ -61,3 +61,31 @@ def test_chat_releases_capacity_after_provider_error(monkeypatch):
 
     assert excinfo.value.status_code == 502
     assert slots.released is True
+
+
+def test_chat_never_exposes_a_citation_without_source(monkeypatch):
+    from nom_rag.pipeline import AskResult
+
+    slots = _OpenSlots()
+    monkeypatch.setattr(api, "_chat_slots", slots)
+    monkeypatch.setitem(api._state, "retriever", object())
+    monkeypatch.setitem(api._state, "client", object())
+    monkeypatch.setattr(
+        "nom_rag.pipeline.ask",
+        lambda *args, **kwargs: AskResult(
+            answer="Fuera de programa [NOM-019 §9.6].",
+            retrieved=[],
+            citations=["NOM-019:9.6"],
+            trace_id="t",
+            model="fake-1",
+            usage={},
+            latency_ms={},
+        ),
+    )
+
+    with pytest.raises(HTTPException) as excinfo:
+        api.chat(api.ChatRequest(question="¿Fuera de programa?"))
+
+    assert excinfo.value.status_code == 502
+    assert "verificación de citas" in excinfo.value.detail
+    assert slots.released is True
